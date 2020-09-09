@@ -1,0 +1,14 @@
+
+/*TODO: STYLE CHAT BOX*/
+
+/* 
+.codenames-wrapper {
+    margin: 0 auto;
+    width: 400px;
+} */
+li {
+  list-style: none;
+  margin-left: -30px;
+}
+
+/* CHAT BOX */
