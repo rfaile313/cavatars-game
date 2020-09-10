@@ -1,6 +1,7 @@
 
 
 const writeEvent = (text) => {
+    /* Writes string to the #events element */
     // <ul> element
     const parent = document.querySelector('#events');
 
@@ -34,7 +35,9 @@ const addButtonListeners = () => {
 
 const sock = io();
 
+// Whenever sock.on 'message' happens, call writeEvent
 sock.on('message', writeEvent);
+
 
 document.querySelector('#chat-form').addEventListener('submit', onFormSubmitted)
 addButtonListeners();
