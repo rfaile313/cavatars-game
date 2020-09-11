@@ -2,7 +2,6 @@ const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
 
-const CodenameGame = require('./codenames-game');
 const CodenamesGame = require('./codenames-game');
 
 const app = express();
@@ -21,7 +20,7 @@ let waitingPlayer = null;
 // socket.io work
 io.on('connection', (sock) => {
 
-    sock.emit('message', 'your id is: ' + sock.id);
+    sock.emit('message', 'Hi player! Your id is: ' + sock.id);
 
     if (waitingPlayer){
         //start a game
@@ -39,7 +38,10 @@ io.on('connection', (sock) => {
         io.emit('message', text);
     });
 
+
 });
+
+
 
 const PORT = 8000; 
 

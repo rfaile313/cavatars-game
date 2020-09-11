@@ -1,5 +1,5 @@
 
-
+// HTML DOCUMENT JS Functions
 const writeEvent = (text) => {
     /* Writes string to the #events element */
     // <ul> element
@@ -37,6 +37,8 @@ const sock = io();
 
 // Whenever sock.on 'message' happens, call writeEvent
 sock.on('message', writeEvent);
+
+// --> END HTML DOCUMENT JS Functions
 
 // -- game logic (for now)
 
@@ -145,6 +147,6 @@ function update()
     }
 }
 
-// ---
+// --- event listeners
 document.querySelector('#chat-form').addEventListener('submit', onFormSubmitted)
 addButtonListeners();
