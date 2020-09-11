@@ -45,6 +45,20 @@ io.on('connection', (sock) => {
         io.emit('message', text);
     });
 
+
+
+    sock.on('playerMove', (move) => {
+        if (move === 'left'){
+            sock.emit('direction', 'left');
+        }
+        else if (move == 'right'){
+            sock.emit('direction', 'right');
+        }
+        else{ //still
+            sock.emit('direction', 'still');
+        }
+    });
+
     //when a client disconnects
     sock.on('disconnect', () => {
         console.log(sock.id + ' disconnected.');

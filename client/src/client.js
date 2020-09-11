@@ -131,7 +131,43 @@ function create()
 
 function update()
 {
-    
+
+    if (cursors.left.isDown)
+    {
+        sock.emit('playerMove', 'left');
+
+    }
+    else if (cursors.right.isDown)
+    {
+        sock.emit('playerMove', 'right');
+
+    }
+    else
+    {
+        sock.emit('playerMove', 'still');
+    }
+
+    sock.on('direction', (direction) => {
+
+        if (direction === 'left'){
+            player.setVelocityX(-160);
+
+            player.anims.play('left', true);
+        }
+        else if (direction === 'right'){
+            player.setVelocityX(160);
+
+            player.anims.play('right', true);
+        }
+        else { //stilll
+            player.setVelocityX(0);
+
+            player.anims.play('turn');
+        }
+
+    });
+
+    /*
     if (cursors.left.isDown)
     {
         player.setVelocityX(-160);
@@ -155,6 +191,7 @@ function update()
     {
         player.setVelocityY(-330);
     }
+    */
 }
 
 
