@@ -1,18 +1,19 @@
-
 /*TODO: STYLE CHAT BOX*/
 
-/* 
-.codenames-wrapper {
-    margin: 0 auto;
-    width: 400px;
-} */
 li {
-  list-style: none;
-  margin-left: -30px;
+    list-style: none;
+    margin-left: -30px;
 }
+
 
 /* CHAT BOX */
 
-body{
-  margin: 0;
+
+/* Chat scrolls up...*/
+
+.event-container {
+    height: 70px;
+    overflow: auto;
+    display: flex;
+    flex-direction: column-reverse;
 }

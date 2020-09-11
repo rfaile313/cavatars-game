@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,27 +11,31 @@
 
 <body>
 
-    <h1 id="welcome">Rudy's avatar codenames</h1>
+    <h3 id="event-heading">Event log</h1>
 
-    <div class="codenames-wrapper">
-        <ul id="events">
-            
-        </ul>
+        <div class="codenames-wrapper">
+
+            <div class="event-container">
+                <ul id="events">
+
+                </ul>
+            </div>
 
 
-    <div class="button-wrapper">
-        <form id="chat-form">
-        <input id="chat">
-        <button id="say">say</button>
-    </form>
-        <button id="rock">rock</button>
-        <button id="paper">paper</button>
-        <button id="scissors">scissors</button>
-       
-    </div>
-</div>
-<script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script> 
-<script src="/socket.io/socket.io.js"></script>
-<script src="src/client.js"></script>
+            <div class="button-wrapper">
+                <form id="chat-form">
+                    <input id="chat">
+                    <button id="say">say</button>
+                </form>
+                <button id="rock">rock</button>
+                <button id="paper">paper</button>
+                <button id="scissors">scissors</button>
+
+            </div>
+        </div>
+        <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
+        <script src="/socket.io/socket.io.js"></script>
+        <script src="src/client.js"></script>
 </body>
+
 </html>

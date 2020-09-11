@@ -1,5 +1,8 @@
 
 // HTML DOCUMENT JS Functions
+
+
+
 const writeEvent = (text) => {
     /* Writes string to the #events element */
     // <ul> element
@@ -10,6 +13,7 @@ const writeEvent = (text) => {
     el.innerHTML = text;
 
     parent.appendChild(el);
+  
 };
 
 const onFormSubmitted = (e) => {
@@ -20,7 +24,10 @@ const onFormSubmitted = (e) => {
     input.value = '';
 
     sock.emit('message', text);
+
 };
+
+
 
 //writeEvent("string");
 
@@ -42,6 +49,7 @@ sock.on('message', writeEvent);
 
 // -- game logic (for now)
 
+
 var config = {
     type: Phaser.AUTO,
     width: 800,
@@ -61,7 +69,10 @@ var config = {
 };
 
 //global game variables here
-var game = new Phaser.Game(config);
+
+//var game = new Phaser.Game(config);
+
+
 //end global game variables
 
 function preload()
@@ -122,6 +133,7 @@ function create()
 
 function update()
 {
+    
     if (cursors.left.isDown)
     {
         player.setVelocityX(-160);
@@ -146,6 +158,12 @@ function update()
         player.setVelocityY(-330);
     }
 }
+
+
+window.addEventListener('load', () => {
+  const game = new Game(config)
+})
+
 
 // --- event listeners
 document.querySelector('#chat-form').addEventListener('submit', onFormSubmitted)
