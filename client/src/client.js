@@ -27,8 +27,6 @@ const onFormSubmitted = (e) => {
 
 };
 
-
-
 //writeEvent("string");
 
 const addButtonListeners = () => {
@@ -70,7 +68,7 @@ var config = {
 
 //global game variables here
 
-//var game = new Phaser.Game(config);
+var game = new Phaser.Game(config);
 
 
 //end global game variables
@@ -158,11 +156,6 @@ function update()
         player.setVelocityY(-330);
     }
 }
-
-
-window.addEventListener('load', () => {
-  const game = new Game(config)
-})
 
 
 // --- event listeners
