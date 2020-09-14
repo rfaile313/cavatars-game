@@ -50,13 +50,15 @@ sock.on('message', writeEvent);
 
 var config = {
     type: Phaser.AUTO,
+    parent: 'game',
+    pixelArt: true,
     width: 800,
     height: 600,
     physics: {
         default: 'arcade',
         arcade: {
             gravity: { y: 300 },
-            debug: false
+            debug: true
         }
     },
     scene: {
@@ -80,6 +82,8 @@ function preload()
     this.load.spritesheet('char_sheet_1', '../assets/future1.png', { frameWidth: 26, frameHeight: 36 });
 }
 
+var player = [];
+
 function create()
 {
     //  A simple background for our game
@@ -93,12 +97,28 @@ function create()
     platforms.create(400, 568, 'ground').setScale(2).refreshBody();
 
     // The player and its settings
-    player = this.physics.add.sprite(100, 450, 'char_sheet_1');
-
+    player[0] = this.physics.add.sprite(100, 450, 'char_sheet_1');
+    player[0].visible = true;
+    player[1] = this.physics.add.sprite(200, 450, 'char_sheet_1');
+    player[1].visible = false;
     //  Player physics properties. Give the little guy a slight bounce.
-    player.setBounce(0.2);
-    player.setCollideWorldBounds(true);
-    player.setScale(2);
+    player[0].setBounce(0.2);
+    player[0].setCollideWorldBounds(true);
+    player[0].setScale(2);
+
+    player[1].setBounce(0.2);
+    player[1].setCollideWorldBounds(true);
+    player[1].setScale(2);
+
+    sock.on('newplayer', (id) => {
+        player[(player.length - 1)].visible = true;
+        console.log("new player" + id);
+    });
+
+    sock.on('removeplayer', (id) => {
+        player[(player.length - 1)].visible = false;
+        console.log("disconnected: " + id);
+    });
 
     //  Our player animations, turning, walking left and walking right.
     this.anims.create({
@@ -126,7 +146,8 @@ function create()
 
     
     //  Collide the player and the stars with the platforms
-    this.physics.add.collider(player, platforms);
+    this.physics.add.collider(player[0], platforms);
+    this.physics.add.collider(player[1], platforms);
 }
 
 function update()
@@ -147,22 +168,22 @@ function update()
         sock.emit('playerMove', 'still');
     }
 
-    sock.on('direction', (direction) => {
+    sock.on('direction', (direction, data) => {
 
         if (direction === 'left'){
-            player.setVelocityX(-160);
+            player[data.id].setVelocityX(-160);
 
-            player.anims.play('left', true);
+            player[data.id].anims.play('left', true);
         }
         else if (direction === 'right'){
-            player.setVelocityX(160);
+            player[data.id].setVelocityX(160);
 
-            player.anims.play('right', true);
+            player[data.id].anims.play('right', true);
         }
         else { //stilll
-            player.setVelocityX(0);
+            player[data.id].setVelocityX(0);
 
-            player.anims.play('turn');
+            player[data.id].anims.play('turn');
         }
 
     });

@@ -17,51 +17,65 @@ const io = socketio(server);
 
 
 let players = [];
+server.lastPlayerID = 0;
+
 
 function add_player(sock){
+    // add player property of sock and initialize server side values
+    sock.player = {
+        id: server.lastPlayerID++,
+        x: 100,
+        y: 100
+    };
     // pass socket object onto the players array
-    players.push(sock);
-    io.emit('message', `Player ${sock.id} connected. Current players: ${players.length}.`);
+    players.push(sock.id);
+    sock.emit('message', 'Hi player #' + (sock.player.id + 1) + '! Your id is: ' + sock.id);
+    io.emit('message', `Player number ${sock.player.id + 1}: ${sock.id} connected. Current players: ${players.length}.`);
+    console.log('player #' + sock.player.id + sock.id + ' connected.');
+    sock.emit('newplayer', sock.id);
 }
 function remove_player(sock){
     var removeIndex = players.map(function(item) { return sock.id; }).indexOf(sock.id);
     // remove object by id from players array
     players.splice(removeIndex, 1);
-    io.emit('message', `Player ${sock.id} disconnected. Current players: ${players.length}.`);
+    io.emit('message', `Player ${sock.player.id + 1}: ${sock.id} disconnected. Current players: ${players.length}.`);
+    server.lastPlayerID--;
+    io.emit('removeplayer', sock.id);
 }
 
 
 // socket.io work
 io.on('connection', (sock) => {
-
-    sock.emit('message', 'Hi player! Your id is: ' + sock.id);
-
-    add_player(sock);
     
-    //console.log(players);
+    add_player(sock);
+
+    
+
+   
     
     sock.on('message', (text) => {
         //io.emit == all clients currently connected
         io.emit('message', text);
     });
 
+    
 
 
     sock.on('playerMove', (move) => {
         if (move === 'left'){
-            sock.emit('direction', 'left');
+            io.emit('direction', 'left', sock.player);
         }
         else if (move == 'right'){
-            sock.emit('direction', 'right');
+            io.emit('direction', 'right', sock.player);
         }
         else{ //still
-            sock.emit('direction', 'still');
+            io.emit('direction', 'still', sock.player);
         }
     });
 
     //when a client disconnects
     sock.on('disconnect', () => {
-        console.log(sock.id + ' disconnected.');
+        console.log('player #' + sock.player.id + sock.id + ' disconnected.');
         remove_player(sock);
     });
 

@@ -5,33 +5,27 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="styles/main.css" rel="stylesheet">
-    <title>Codenames</title>
+    <title>Cavatars</title>
 </head>
 
-
 <body>
-
     <h3 id="event-heading">Event log</h1>
 
         <div class="codenames-wrapper">
 
             <div class="event-container">
                 <ul id="events">
-
                 </ul>
             </div>
-
-
             <div class="button-wrapper">
                 <form id="chat-form">
                     <input id="chat" autocomplete="off">
                     <button id="say">say</button>
                 </form>
-                <button id="rock">rock</button>
-                <button id="paper">paper</button>
-                <button id="scissors">scissors</button>
-
             </div>
+
+            <div id="game"></div>
+
         </div>
         <script src="//cdn.jsdelivr.net/npm/phaser@3.11.0/dist/phaser.js"></script>
         <script src="/socket.io/socket.io.js"></script>
