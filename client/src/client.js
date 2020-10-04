@@ -29,23 +29,13 @@ const onFormSubmitted = (e) => {
 
 //writeEvent("string");
 
-const addButtonListeners = () => {
-    ['rock', 'paper', 'scissors'].forEach((id) => {
-        const button = document.getElementById(id);
-        button.addEventListener('click', () => {
-            sock.emit('turn', id);
-        });
-    });
-};
+// --> END HTML DOCUMENT JS Functions
 
+// initialize socket.io
 const sock = io();
 
 // Whenever sock.on 'message' happens, call writeEvent
 sock.on('message', writeEvent);
-
-// --> END HTML DOCUMENT JS Functions
-
-// -- game logic (for now)
 
 
 var config = {
@@ -71,7 +61,7 @@ var config = {
 //global game variables here
 
 var game = new Phaser.Game(config);
-
+var player = []; //array of players
 
 //end global game variables
 
@@ -82,7 +72,7 @@ function preload()
     this.load.spritesheet('char_sheet_1', '../assets/future1.png', { frameWidth: 26, frameHeight: 36 });
 }
 
-var player = [];
+
 
 function create()
 {
@@ -96,28 +86,45 @@ function create()
     //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
     platforms.create(400, 568, 'ground').setScale(2).refreshBody();
 
-    // The player and its settings
-    player[0] = this.physics.add.sprite(100, 450, 'char_sheet_1');
-    player[0].visible = true;
-    player[1] = this.physics.add.sprite(200, 450, 'char_sheet_1');
-    player[1].visible = false;
-    //  Player physics properties. Give the little guy a slight bounce.
-    player[0].setBounce(0.2);
-    player[0].setCollideWorldBounds(true);
-    player[0].setScale(2);
+    // Create players and add to array
+    
+    for (var i = 0; i < 8; i++) {
+        player.push(i);
+        player[i] = this.physics.add.sprite(Math.random(100,200), Math.random(400,500), 'char_sheet_1');
+        player[i].setBounce(0.2);
+        player[i].setCollideWorldBounds(true);
+        player[i].setScale(2);
+        this.physics.add.collider(player[i], platforms);
+        player[i].visible = false;
+        
+      }
+      
 
-    player[1].setBounce(0.2);
-    player[1].setCollideWorldBounds(true);
-    player[1].setScale(2);
+    // player[0].visible = true;
 
     sock.on('newplayer', (id) => {
-        player[(player.length - 1)].visible = true;
-        console.log("new player" + id);
+        
+        console.log("new player: #" + id);
+        
+        if (id == 0){
+            player[0].visible = true;
+            // only make player[0] visible
+        }
+        else{
+            
+            for (var i=0; i <= id; i++ ) {
+                player[i].visible = true;
+                console.log("making player: " + i + " visible");
+            }
+        }
+
+        
     });
 
     sock.on('removeplayer', (id) => {
-        player[(player.length - 1)].visible = false;
-        console.log("disconnected: " + id);
+       
+
+        console.log("player #" + id + " disconnected.");
     });
 
     //  Our player animations, turning, walking left and walking right.
@@ -146,9 +153,17 @@ function create()
 
     
     //  Collide the player and the stars with the platforms
-    this.physics.add.collider(player[0], platforms);
-    this.physics.add.collider(player[1], platforms);
+
+    // tell server we're ready for a player
+    sock.emit('newPlayerReady');
+  
 }
+
+/*
+function create_player(image){
+
+}
+*/
 
 function update()
 {
@@ -218,4 +233,3 @@ function update()
 
 // --- event listeners
 document.querySelector('#chat-form').addEventListener('submit', onFormSubmitted)
-addButtonListeners();
