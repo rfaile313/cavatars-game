@@ -5,7 +5,7 @@ const socketio = require('socket.io');
 //const CodenamesGame = require('./codenames-game');
 
 const app = express();
-const PORT = 8000; 
+const PORT = 8000;
 
 const clientPath = `${__dirname}/../client`
 console.log(`Serving static file from ${clientPath}`);
@@ -16,59 +16,44 @@ const server = http.createServer(app);
 // socketio
 const io = socketio(server);
 
-let players = []; // server-side player array
-server.lastPlayerID = 0;
+var players = [];
 
+function Player(id, x, y) {
+    this.id = id;
+    this.x = x;
+    this.y = y;
+}
 
-// socket.io work
-io.on('connection', (sock) => {
-    
-    
+io.on('connection', onConnect);
 
-    sock.on('message', (text) => {
-        //io.emit == all clients currently connected
-        io.emit('message', text);
+function onConnect(socket) {
+    console.log("New Client Connected: " + socket.id);
+
+    socket.on('newPlayer', function (data) {
+        console.log(socket.id + ' ' + data.x + ' ' + data.y);
+        var player = new Player(socket.id, data.x, data.y,);
+        players.push(player);
     });
 
-    sock.on('newPlayerReady', () => {
-        sock.player = {
-            id: server.lastPlayerID++,
-            x: 100,
-            y: 100
-        };
-       
-        players.push(sock.id);  // pass socket object onto the players array
-        sock.emit('message', 'Hi player #' + (sock.player.id) + '! Your id is: ' + sock.id);
-        io.emit('message', `Player number ${sock.player.id}: ${sock.id} connected. Current players: ${players.length}.`);
-        console.log('player #' + sock.player.id + sock.id + ' connected.');
-        io.emit('newplayer', sock.player.id);
-    });
-
-    // emit movement to all players
-    sock.on('playerMove', (move) => {
-        if (move === 'left'){
-            io.emit('direction', 'left', sock.player);
+    socket.on('update', function(data) {
+        // console.log(socket.id + " " + data.x + " " + data.y);
+        var player;
+        for (var i = 0; i < players.length; i++) {
+          if (socket.id == players[i].id) {
+            player = players[i];
+          }
         }
-        else if (move == 'right'){
-            io.emit('direction', 'right', sock.player);
-        }
-        else{ //still
-            io.emit('direction', 'still', sock.player);
-        }
+        player.x = data.x;
+        player.y = data.y;
+      });
+
+    socket.on('disconnect', function() {
+        console.log(socket.id +' has disconnected.')
     });
 
-    //when a client disconnects
-    sock.on('disconnect', () => {
-        console.log('player #' + sock.id + ' disconnected.');
-        var removeIndex = players.map(function(item) { return sock.id; }).indexOf(sock.id);
-        // remove object by id from players array
-        players.splice(removeIndex, 1);
-        io.emit('message', `Player ${sock.player.id}: ${sock.id} disconnected. Current players: ${players.length}.`);
-        io.emit('removeplayer', sock.player.id);
-        server.lastPlayerID--;
-    });
 
-});
+} // --> onConnect
+
 
 
 server.on('error', (err) => {
