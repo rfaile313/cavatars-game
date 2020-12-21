@@ -79,7 +79,14 @@ function create()
           if (playerInfo.playerId === otherPlayer.playerId) {
             otherPlayer.setRotation(playerInfo.rotation);
             otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-            
+            if (playerInfo.direction == 'left'){
+                otherPlayer.anims.play('left', true);
+            }
+            else if (playerInfo.direction == 'right') {
+                otherPlayer.anims.play('right', true);
+            }
+            else
+            otherPlayer.anims.play('turn', true);
           }
         });
       });
@@ -95,14 +102,17 @@ function update()
     if (this.player)
     {
         if (this.cursors.left.isDown) {
-            this.player.setVelocityX(-160);
+            this.player.setVelocityX(-100);
             this.player.anims.play('left', true);
+            this.player.direction = 'left';
         } else if (this.cursors.right.isDown) {
-            this.player.setVelocityX(160);
+            this.player.setVelocityX(100);
             this.player.anims.play('right', true);
+            this.player.direction = 'right';
         } else {
             this.player.setVelocityX(0);
             this.player.anims.play('turn');
+            this.player.direction = 'stand';
         }
 
         this.physics.world.wrap(this.player, 5);
@@ -111,8 +121,9 @@ function update()
         var x = this.player.x;
         var y = this.player.y;
         var r = this.player.rotation;
+        var d = this.player.direction;
         if (this.player.oldPosition && (x !== this.player.oldPosition.x || y !== this.player.oldPosition.y || r !== this.player.oldPosition.rotation)) {
-            this.socket.emit('playerMovement', { x: this.player.x, y: this.player.y, rotation: this.player.rotation });
+            this.socket.emit('playerMovement', { x: this.player.x, y: this.player.y, rotation: this.player.rotation, direction: this.player.direction });
         }
 
         // save old position data
