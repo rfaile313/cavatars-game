@@ -28,7 +28,6 @@ var players = {};
 
 io.on('connection', onConnect);
 
-
 function onConnect(socket) {
     console.log("New Client Connected: " + socket.id);
 
