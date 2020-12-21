@@ -16,46 +16,6 @@ const server = http.createServer(app);
 // socketio
 const io = socketio(server);
 
-var players = [];
-
-function Player(id, x, y) {
-    this.id = id;
-    this.x = x;
-    this.y = y;
-}
-
-io.on('connection', onConnect);
-
-function onConnect(socket) {
-    console.log("New Client Connected: " + socket.id);
-
-    socket.on('newPlayer', function (data) {
-        console.log(socket.id + ' ' + data.x + ' ' + data.y);
-        var player = new Player(socket.id, data.x, data.y,);
-        players.push(player);
-    });
-
-    socket.on('update', function(data) {
-        // console.log(socket.id + " " + data.x + " " + data.y);
-        var player;
-        for (var i = 0; i < players.length; i++) {
-          if (socket.id == players[i].id) {
-            player = players[i];
-          }
-        }
-        player.x = data.x;
-        player.y = data.y;
-      });
-
-    socket.on('disconnect', function() {
-        console.log(socket.id +' has disconnected.')
-    });
-
-
-} // --> onConnect
-
-
-
 server.on('error', (err) => {
     console.error('Server Error:', err);
 });
@@ -63,3 +23,51 @@ server.on('error', (err) => {
 server.listen(PORT, () => {
     console.log(`Server started on http://localhost:${PORT}`);
 });
+
+var players = {};
+
+io.on('connection', onConnect);
+
+
+function onConnect(socket) {
+    console.log("New Client Connected: " + socket.id);
+
+    players[socket.id] = {
+        rotation: 0,
+        x: 100,
+        y: 100,
+        playerId: socket.id,
+        team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue'
+    };
+
+     // send the players object to the new player
+     socket.emit('currentPlayers', players);
+     // update all other players of the new player
+     socket.broadcast.emit('newPlayer', players[socket.id]);
+ 
+     // when a player disconnects, remove them from our players object
+     socket.on('disconnect', function () {
+         console.log('user disconnected');
+         // remove this player from our players object
+         delete players[socket.id];
+         // emit a message to all players to remove this player
+         io.emit('userQuit', socket.id);
+     });
+ 
+     // when a player moves, update the player data
+     socket.on('playerMovement', function (movementData) {
+         players[socket.id].x = movementData.x;
+         players[socket.id].y = movementData.y;
+         players[socket.id].rotation = movementData.rotation;
+         // emit a message to all players about the player that moved
+         socket.broadcast.emit('playerMoved', players[socket.id]);
+     });
+
+     socket.on('message', function(data){
+        io.emit('message', data);
+     });
+
+} // --> onConnect
+
+
+
