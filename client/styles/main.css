@@ -9,7 +9,7 @@ li {
 
 /* Chat scrolls up...*/
 .event-container {
-    height: 300px;
+    height: 200px;
     overflow: auto;
     display: flex;
     flex-direction: column-reverse;

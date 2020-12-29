@@ -1,10 +1,9 @@
+// NPM
 const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
-
+// Local Files
 const WordBank = require('./wordbank');
-
-//const CodenamesGame = require('./codenames-game');
 
 const app = express();
 const PORT = 8000;
@@ -41,7 +40,7 @@ function onConnect(socket) {
 
     players[socket.id] = {
         rotation: 0,
-        x: 150,
+        x: 400,
         y: 150,
         playerId: socket.id,
         team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue'
@@ -71,6 +70,7 @@ function onConnect(socket) {
          socket.broadcast.emit('playerMoved', players[socket.id]);
      });
 
+     // chat message
      socket.on('message', function(data){
         io.emit('message', data);
      });

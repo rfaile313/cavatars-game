@@ -7,7 +7,6 @@ var config = {
     physics: {
         default: 'arcade',
         arcade: {
-            //gravity: { y: 300 },
             debug: true
         }
     },
@@ -59,12 +58,10 @@ function preload() {
     this.load.image('sky', '../assets/sky.png');
     this.load.image('space', '../assets/space.png');
     this.load.image('ground', '../assets/platform.png');
-    this.load.spritesheet('char_sheet_1', '../assets/future1.png', { frameWidth: 26, frameHeight: 36 });
-
-
     this.load.image("tiles", "../assets/576x96-96x96.png");
     this.load.image("tiles_resized", "../assets/resized.png");
-
+    this.load.spritesheet('char_sheet_1', '../assets/future1.png', { frameWidth: 26, frameHeight: 36 });
+    //this.load.bitmapFont('myFont', '../assets/font_0.png', '../assets/font.fnt');
 }
 
 function create() {
@@ -76,7 +73,7 @@ function create() {
     // Generate world
     //this.add.image(0, 0, 'space');
 
-    //this.cameras.main.setViewport(0, 0, 800, 600).setZoom(1.2); //.setZoom(1.5)
+    this.cameras.main.setViewport(0, 0, 820, 820).setZoom(1.2); //.setZoom(1.5)
 
     const level = [
         [1, 1, 1, 1, 1, 1, 1, 1, 1], //top
@@ -129,6 +126,20 @@ function create() {
         );
     }
 
+    /* bitmap text
+        for (var i = 0; i < tileLabels.length; i++) {
+        tileLabels[i] = this.add.bitmapText(
+            tileLabels[i].pixelX + 10,
+            tileLabels[i].pixelY + 30,
+
+            
+            // for now just get locally to test
+            'myFont',
+            code1[i]
+            
+        );
+    }
+    */
 
     // Generate Player(s)
     this.otherPlayers = this.physics.add.group();
@@ -176,16 +187,10 @@ function create() {
         });
     });
 
-
-
-    // bind keys
+    // Bind keys
     this.cursors = this.input.keyboard.createCursorKeys();
 
-
-    /*
-    Client Chat functions
-    */
-
+    // Chat client functions
     const writeEvent = (text) => {
         /* Writes string to the #events element */
         // <ul> element
@@ -210,7 +215,7 @@ function create() {
 
     };
 
-    // --- event listeners
+    // Chat event listener
     document.querySelector('#chat-form').addEventListener('submit', onFormSubmitted);
     // Whenever sock.on 'message' happens, call writeEvent
     this.socket.on('message', writeEvent);
