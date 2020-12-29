@@ -1,4 +1,3 @@
-
 var config = {
     type: Phaser.AUTO,
     parent: 'game',
@@ -20,12 +19,41 @@ var config = {
 };
 
 //global game variables here
+code1 = [
+    "Hollywood",
+    "Screen",
+    "Play",
+    "Marble",
+    "Dinosaur",
+    "Cat",
+    "Pitch",
+    "Bond",
+    "Greece",
+    "Deck",
+    "Spike",
+    "Center",
+    "Vacuum",
+    "Unicorn",
+    "Undertaker",
+    "Sock",
+    "Loch Ness",
+    "Horse",
+    "Berlin",
+    "Platypus",
+    "Port",
+    "Chest",
+    "Box",
+    "Compound",
+    "Ship",
+    "Watch",
+    "Space",
+    "Flute",
+    "Tower",
+    "Death",
+  ];
+// ^^ erase after ttesting 
 
 var game = new Phaser.Game(config);
-//var platforms; // ground
-//var cursors; // keys to move
-
-//end global game variables
 
 function preload() {
     this.load.image('sky', '../assets/sky.png');
@@ -46,7 +74,7 @@ function create() {
     this.socket = io();
 
     // Generate world
-   //this.add.image(0, 0, 'space');
+    //this.add.image(0, 0, 'space');
 
     //this.cameras.main.setViewport(0, 0, 800, 600).setZoom(1.2); //.setZoom(1.5)
 
@@ -69,6 +97,37 @@ function create() {
     });
     const tiles = map.addTilesetImage("tiles");
     this.platforms = map.createDynamicLayer(0, tiles, 0, 0);
+
+
+    // labeled tile array
+    var tileLabels = [];
+
+    // assign the tiles which will be labeled
+    for (var i = 0; i < this.platforms.layer.data.length; i++) {
+        for (var j = 0; j < this.platforms.layer.data[i].length; j++) {
+            if (this.platforms.layer.data[i][j].index == 2) {
+                tileLabels.push(this.platforms.layer.data[i][j]);
+            }
+        }
+    }
+    //console.log(tileLabels);
+
+    // assign labels to tiles
+    for (var i = 0; i < tileLabels.length; i++) {
+        tileLabels[i] = this.add.text(
+            tileLabels[i].pixelX + 10,
+            tileLabels[i].pixelY + 30,
+
+            // for now just get locally to test
+            code1[i],
+            {
+                fontFamily: "Verdana",
+                fontWeight: "bold",
+                fontSize: "14px",
+                fill: "#000",
+            }
+        );
+    }
 
 
     // Generate Player(s)
@@ -153,28 +212,24 @@ function create() {
 
     // --- event listeners
     document.querySelector('#chat-form').addEventListener('submit', onFormSubmitted);
-
-    // --> END HTML DOCUMENT JS Functions
-
-    // initialize socket.io
-
-
     // Whenever sock.on 'message' happens, call writeEvent
     this.socket.on('message', writeEvent);
 }
 
 function update() {
+
+    // Player movement handlers
     if (this.player) {
         if (this.cursors.left.isDown) {
             this.player.setVelocityX(-100);
             this.player.anims.play('left', true);
             this.player.direction = 'left';
-        } 
+        }
         else if (this.cursors.right.isDown) {
             this.player.setVelocityX(100);
             this.player.anims.play('right', true);
             this.player.direction = 'right';
-        } 
+        }
         else if (this.cursors.up.isDown) {
             this.player.setVelocityY(-100);
             this.player.anims.play('up', true);
@@ -197,7 +252,8 @@ function update() {
         var y = this.player.y;
         var r = this.player.rotation;
         var d = this.player.direction;
-        if (this.player.oldPosition && (x !== this.player.oldPosition.x || y !== this.player.oldPosition.y || r !== this.player.oldPosition.rotation)) {
+        // only if the values changed
+        if (this.player.oldPosition && (x !== this.player.oldPosition.x || y !== this.player.oldPosition.y || r !== this.player.oldPosition.rotation || d !== this.player.oldPosition.direction)) {
             this.socket.emit('playerMovement', { x: this.player.x, y: this.player.y, rotation: this.player.rotation, direction: this.player.direction });
         }
 
@@ -205,7 +261,8 @@ function update() {
         this.player.oldPosition = {
             x: this.player.x,
             y: this.player.y,
-            rotation: this.player.rotation
+            rotation: this.player.rotation,
+            direction: this.player.direction
         };
     }
 }

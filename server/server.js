@@ -2,12 +2,14 @@ const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
 
+const WordBank = require('./wordbank');
+
 //const CodenamesGame = require('./codenames-game');
 
 const app = express();
 const PORT = 8000;
 
-const clientPath = `${__dirname}/../client`
+const clientPath = `${__dirname}/../client`;
 console.log(`Serving static file from ${clientPath}`);
 // Serve static file to client with express
 app.use(express.static(clientPath));
@@ -25,6 +27,12 @@ server.listen(PORT, () => {
 });
 
 var players = {};
+
+const wordlist = new WordBank(); 
+const gameWords = wordlist.generateGameWords();
+//console.log(gameWords);
+
+// TODO: on a 'new game' request (not a new socket), send the wordlist
 
 io.on('connection', onConnect);
 
