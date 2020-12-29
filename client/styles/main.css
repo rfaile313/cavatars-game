@@ -1,19 +1,28 @@
 /*TODO: STYLE CHAT BOX*/
 
+/* Chat entries*/
 li {
     list-style: none;
     margin-left: -30px;
 }
-
-
-/* CHAT BOX */
-
+/*********************************/
 
 /* Chat scrolls up...*/
-
 .event-container {
-    height: 70px;
+    height: 300px;
     overflow: auto;
     display: flex;
     flex-direction: column-reverse;
 }
+/*********************************/
+
+
+/*Game and chat go next to one another */
+#game{
+    display: inline-block;
+}
+.chat-wrapper{
+    display: inline-block;
+    vertical-align:top
+}
+/*********************************/

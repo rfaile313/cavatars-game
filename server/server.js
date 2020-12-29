@@ -33,8 +33,8 @@ function onConnect(socket) {
 
     players[socket.id] = {
         rotation: 0,
-        x: 100,
-        y: 100,
+        x: 150,
+        y: 150,
         playerId: socket.id,
         team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue'
     };

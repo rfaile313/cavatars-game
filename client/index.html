@@ -5,14 +5,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="styles/main.css" rel="stylesheet">
-    <title>Cavatars</title>
+    <title>Cavatars by Rudy</title>
 </head>
 
 <body>
-    <h3 id="event-heading">Event log</h1>
-
-        <div class="codenames-wrapper">
-
+    <div class="codenames-wrapper">
+        <!--  -->
+        <div id="game"></div>
+        <!--  -->
+        <div class="chat-wrapper">
+            <h3>Chat</h3>
             <div class="event-container">
                 <ul id="events">
                 </ul>
@@ -20,16 +22,17 @@
             <div class="button-wrapper">
                 <form id="chat-form">
                     <input id="chat" autocomplete="off">
-                    <button id="say">say</button>
+                    <button id="say">Say</button>
                 </form>
             </div>
-
-            <div id="game"></div>
-
         </div>
-        <script src="js/phaser.js"></script>
-        <script src="/socket.io/socket.io.js"></script>
-        <script src="src/game.js"></script>
+       
+
+    </div>
+    <!-- Scripts Load here-->
+    <script src="js/phaser.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="src/game.js"></script>
 </body>
 
 </html>

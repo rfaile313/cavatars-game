@@ -3,12 +3,12 @@ var config = {
     type: Phaser.AUTO,
     parent: 'game',
     pixelArt: true,
-    width: 800,
-    height: 600,
+    width: 820,
+    height: 820,
     physics: {
         default: 'arcade',
         arcade: {
-            gravity: { y: 300 },
+            //gravity: { y: 300 },
             debug: true
         }
     },
@@ -22,36 +22,56 @@ var config = {
 //global game variables here
 
 var game = new Phaser.Game(config);
-var platforms; // ground
-var cursors; // keys to move
+//var platforms; // ground
+//var cursors; // keys to move
 
 //end global game variables
 
-function preload()
-{
+function preload() {
     this.load.image('sky', '../assets/sky.png');
+    this.load.image('space', '../assets/space.png');
     this.load.image('ground', '../assets/platform.png');
     this.load.spritesheet('char_sheet_1', '../assets/future1.png', { frameWidth: 26, frameHeight: 36 });
+
+
+    this.load.image("tiles", "../assets/576x96-96x96.png");
+    this.load.image("tiles_resized", "../assets/resized.png");
+
 }
 
+function create() {
 
-
-function create()
-{
-
-    //  A simple background for our game
-    this.add.image(400, 300, 'sky');
-
-    //  The platforms group contains the ground and the 2 ledges we can jump on
-    this.platforms = this.physics.add.staticGroup();
-
-    //  Here we create the ground.
-    //  Scale it to fit the width of the game (the original sprite is 400x32 in size)
-    this.platforms.create(400, 568, 'ground').setScale(2).refreshBody();
-
-
+    // socket & self setup
     var self = this;
     this.socket = io();
+
+    // Generate world
+   //this.add.image(0, 0, 'space');
+
+    //this.cameras.main.setViewport(0, 0, 800, 600).setZoom(1.2); //.setZoom(1.5)
+
+    const level = [
+        [1, 1, 1, 1, 1, 1, 1, 1, 1], //top
+        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 0, 2, 2, 2, 2, 2, 0, 1],
+        [1, 0, 2, 2, 2, 2, 2, 0, 1],
+        [1, 0, 2, 2, 2, 2, 2, 0, 1],
+        [1, 0, 2, 2, 2, 2, 2, 0, 1],
+        [1, 0, 2, 2, 2, 2, 2, 0, 1],
+        [1, 0, 0, 0, 0, 0, 0, 0, 1],
+        [1, 1, 1, 1, 1, 1, 1, 1, 1], // bottom
+    ];
+
+    const map = this.make.tilemap({
+        data: level,
+        tileWidth: 96,
+        tileHeight: 96,
+    });
+    const tiles = map.addTilesetImage("tiles");
+    this.platforms = map.createDynamicLayer(0, tiles, 0, 0);
+
+
+    // Generate Player(s)
     this.otherPlayers = this.physics.add.group();
     this.socket.on('currentPlayers', function (players) {
         //console.log(players);
@@ -76,84 +96,101 @@ function create()
 
     this.socket.on('playerMoved', function (playerInfo) {
         self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-          if (playerInfo.playerId === otherPlayer.playerId) {
-            otherPlayer.setRotation(playerInfo.rotation);
-            otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-            if (playerInfo.direction == 'left'){
-                otherPlayer.anims.play('left', true);
+            if (playerInfo.playerId === otherPlayer.playerId) {
+                otherPlayer.setRotation(playerInfo.rotation);
+                otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+                if (playerInfo.direction == 'left') {
+                    otherPlayer.anims.play('left', true);
+                }
+                else if (playerInfo.direction == 'right') {
+                    otherPlayer.anims.play('right', true);
+                }
+                else if (playerInfo.direction == 'up') {
+                    otherPlayer.anims.play('up', true);
+                }
+                else if (playerInfo.direction == 'down') {
+                    otherPlayer.anims.play('down', true);
+                }
+                else
+                    otherPlayer.anims.play('turn', true);
             }
-            else if (playerInfo.direction == 'right') {
-                otherPlayer.anims.play('right', true);
-            }
-            else
-            otherPlayer.anims.play('turn', true);
-          }
         });
-      });
+    });
 
 
 
+    // bind keys
     this.cursors = this.input.keyboard.createCursorKeys();
+
 
     /*
     Client Chat functions
     */
-  
+
     const writeEvent = (text) => {
         /* Writes string to the #events element */
         // <ul> element
         const parent = document.querySelector('#events');
-    
+
         // <li> element
         const el = document.createElement('li');
         el.innerHTML = text;
-    
+
         parent.appendChild(el);
-      
+
     };
-    
+
     const onFormSubmitted = (e) => {
         e.preventDefault();
-    
+
         const input = document.querySelector('#chat');
         const text = input.value;
         input.value = '';
-    
+
         this.socket.emit('message', text);
-    
+
     };
-    
+
     // --- event listeners
     document.querySelector('#chat-form').addEventListener('submit', onFormSubmitted);
-    
+
     // --> END HTML DOCUMENT JS Functions
-    
+
     // initialize socket.io
-    
-    
+
+
     // Whenever sock.on 'message' happens, call writeEvent
     this.socket.on('message', writeEvent);
 }
 
-function update()
-{
-    if (this.player)
-    {
+function update() {
+    if (this.player) {
         if (this.cursors.left.isDown) {
             this.player.setVelocityX(-100);
             this.player.anims.play('left', true);
             this.player.direction = 'left';
-        } else if (this.cursors.right.isDown) {
+        } 
+        else if (this.cursors.right.isDown) {
             this.player.setVelocityX(100);
             this.player.anims.play('right', true);
             this.player.direction = 'right';
+        } 
+        else if (this.cursors.up.isDown) {
+            this.player.setVelocityY(-100);
+            this.player.anims.play('up', true);
+            this.player.direction = 'up';
+        }
+        else if (this.cursors.down.isDown) {
+            this.player.setVelocityY(100);
+            this.player.anims.play('down', true);
+            this.player.direction = 'down';
         } else {
-            this.player.setVelocityX(0);
+            this.player.setVelocity(0);
             this.player.anims.play('turn');
             this.player.direction = 'stand';
         }
 
-        this.physics.world.wrap(this.player, 5);
+        this.physics.world.wrap(this.player, 2);
 
         // emit player movement
         var x = this.player.x;
@@ -173,7 +210,7 @@ function update()
     }
 }
 
-function addPlayer(self, playerInfo){
+function addPlayer(self, playerInfo) {
     console.log('adding player');
     self.player = self.physics.add.sprite(playerInfo.x, playerInfo.y, 'char_sheet_1');
     self.player.body.setSize(25, 33, true);
@@ -184,28 +221,43 @@ function addPlayer(self, playerInfo){
     } else {
         //self.player.setTint(0xff0000);
     }
-        //  Our player animations, turning, walking left and walking right.
-        self.anims.create({
-            key: 'left',
-            frames: self.anims.generateFrameNumbers('char_sheet_1', { start: 12, end: 14 }),
-            frameRate: 10,
-            repeat: -1
-        });
-    
-        self.anims.create({
-            key: 'turn',
-            frames: [ { key: 'char_sheet_1', frame: 1 } ],
-            frameRate: 20
-        });
-    
-        self.anims.create({
-            key: 'right',
-            frames: self.anims.generateFrameNumbers('char_sheet_1', { start: 24, end: 26 }),
-            frameRate: 10,
-            repeat: -1
-        });
+    //  Our player animations, turning, walking left and walking right.
+    self.anims.create({
+        key: 'left',
+        frames: self.anims.generateFrameNumbers('char_sheet_1', { start: 12, end: 14 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    self.anims.create({
+        key: 'right',
+        frames: self.anims.generateFrameNumbers('char_sheet_1', { start: 24, end: 26 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    self.anims.create({
+        key: 'up',
+        frames: self.anims.generateFrameNumbers('char_sheet_1', { start: 36, end: 38 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    self.anims.create({
+        key: 'down',
+        frames: self.anims.generateFrameNumbers('char_sheet_1', { start: 0, end: 2 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    self.anims.create({
+        key: 'turn',
+        frames: [{ key: 'char_sheet_1', frame: 1 }]
+        //frameRate: 20
+    });
 
-        self.physics.add.collider(self.player, self.platforms);
+
+
+    self.physics.add.collider(self.player, self.platforms);
+    // camera follows player
+    self.cameras.main.startFollow(self.player);
+
 }
 
 function addOtherPlayers(self, playerInfo) {
