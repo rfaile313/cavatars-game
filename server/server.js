@@ -1,20 +1,23 @@
-// NPM
+// Node Modules
 const http = require('http');
 const express = require('express');
 const socketio = require('socket.io');
 // Local Files
 const WordBank = require('./wordbank');
+const { exists } = require('fs');
 
 const app = express();
 const PORT = 8000;
+const DEBUG = true;
 
-const clientPath = `${__dirname}/../client`;
-console.log(`Serving static file from ${clientPath}`);
-// Serve static file to client with express
-app.use(express.static(clientPath));
+// Only allow index.html on / or /settings
+const indexPath = `${__dirname}/../client`;
+console.log(`Serving static file from ${indexPath}`);
+app.use('/', express.static(indexPath));
+app.use('/settings', express.static(__dirname + '/../client/settings.html'));
 // Create http server with express app
 const server = http.createServer(app);
-// socketio
+// socketio init
 const io = socketio(server);
 
 server.on('error', (err) => {
@@ -25,7 +28,7 @@ server.listen(PORT, () => {
     console.log(`Server started on http://localhost:${PORT}`);
 });
 
-var players = {};
+var players = {}; // player object list
 
 const wordlist = new WordBank(); 
 const gameWords = wordlist.generateGameWords();
@@ -39,6 +42,7 @@ function onConnect(socket) {
     console.log("New Client Connected: " + socket.id);
 
     players[socket.id] = {
+        name: ("Player" + socket.id).slice(0,10),
         rotation: 0,
         x: 400,
         y: 150,
@@ -73,6 +77,17 @@ function onConnect(socket) {
      // chat message
      socket.on('message', function(data){
         io.emit('message', data);
+     });
+     // server debug
+     socket.on('evalServer', function(data){
+        if (!DEBUG) return; // kill if not debug mode
+        try{
+        var res = eval(data);
+        socket.emit('evalAnswer', res);
+        }
+        catch(e){
+        socket.emit('evalAnswer', 'Does not exist. Try something else.');
+        }
      });
 
 } // --> onConnect

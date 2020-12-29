@@ -1,3 +1,5 @@
+const DEBUG = true;
+
 var config = {
     type: Phaser.AUTO,
     parent: 'game',
@@ -7,7 +9,7 @@ var config = {
     physics: {
         default: 'arcade',
         arcade: {
-            debug: true
+            debug: DEBUG
         }
     },
     scene: {
@@ -49,10 +51,10 @@ code1 = [
     "Flute",
     "Tower",
     "Death",
-  ];
+];
 // ^^ erase after ttesting 
 
-var game = new Phaser.Game(config);
+const game = new Phaser.Game(config);
 
 function preload() {
     this.load.image('sky', '../assets/sky.png');
@@ -126,21 +128,6 @@ function create() {
         );
     }
 
-    /* bitmap text
-        for (var i = 0; i < tileLabels.length; i++) {
-        tileLabels[i] = this.add.bitmapText(
-            tileLabels[i].pixelX + 10,
-            tileLabels[i].pixelY + 30,
-
-            
-            // for now just get locally to test
-            'myFont',
-            code1[i]
-            
-        );
-    }
-    */
-
     // Generate Player(s)
     this.otherPlayers = this.physics.add.group();
     this.socket.on('currentPlayers', function (players) {
@@ -195,30 +182,34 @@ function create() {
         /* Writes string to the #events element */
         // <ul> element
         const parent = document.querySelector('#events');
-
         // <li> element
         const el = document.createElement('li');
         el.innerHTML = text;
-
         parent.appendChild(el);
-
+    };
+    const evalAnswer = (text) => {
+        console.log(text);
     };
 
     const onFormSubmitted = (e) => {
         e.preventDefault();
 
         const input = document.querySelector('#chat');
-        const text = input.value;
-        input.value = '';
 
-        this.socket.emit('message', text);
+        if (DEBUG && input.value[0] === '/') {
+            this.socket.emit('evalServer', input.value.slice(1));
+        }
+        else
+            this.socket.emit('message', input.value);
 
+        input.value = ''; // Clear text after send
     };
 
     // Chat event listener
     document.querySelector('#chat-form').addEventListener('submit', onFormSubmitted);
     // Whenever sock.on 'message' happens, call writeEvent
     this.socket.on('message', writeEvent);
+    this.socket.on('evalAnswer', evalAnswer);
 }
 
 function update() {
@@ -278,6 +269,7 @@ function addPlayer(self, playerInfo) {
     self.player.body.setSize(25, 33, true);
     //self.player.body.offset.y = 38;
     self.player.setBounce(0.2);
+    self.player.name = playerInfo.name;
     if (playerInfo.team === 'blue') {
         //self.player.setTint(0x0000ff);
     } else {
@@ -331,8 +323,27 @@ function addOtherPlayers(self, playerInfo) {
         //otherPlayer.setTint(0xff0000);
     }
     otherPlayer.playerId = playerInfo.playerId;
+    otherPlayer.name = playerInfo.name;
     self.otherPlayers.add(otherPlayer);
 
     self.physics.add.collider(otherPlayer, self.platforms);
 }
 
+
+
+// GRAVEYARD
+
+    /* bitmap text
+        for (var i = 0; i < tileLabels.length; i++) {
+        tileLabels[i] = this.add.bitmapText(
+            tileLabels[i].pixelX + 10,
+            tileLabels[i].pixelY + 30,
+
+            
+            // for now just get locally to test
+            'myFont',
+            code1[i]
+            
+        );
+    }
+    */
