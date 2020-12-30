@@ -1,17 +1,15 @@
 class WordBank {
 
-  getRandomInt(max) {
-    return Math.floor(Math.random() * Math.floor(max));
-  } //randint
-
-  generateGameWords() {
-
-    var wordlist;
+  constructor() {
+    this.wordList;
+    this.blueTeamWords;
+    this.redTeamWords;
+    this.neutralWords;
+    this.assasinWord;
     const selectList = this.getRandomInt(7); //change this if you add more lists
-
     switch (selectList) {
       case 0:
-        wordlist = [
+        this.wordList = [
           "Hollywood",
           "Screen",
           "Play",
@@ -45,7 +43,7 @@ class WordBank {
         ];
         break;
       case 1:
-        wordlist = [
+        this.wordList = [
           "Well",
           "Fair",
           "Tooth",
@@ -79,7 +77,7 @@ class WordBank {
         ];
         break;
       case 2:
-        wordlist = [
+        this.wordList = [
           "Foot",
           "Torch",
           "Arm",
@@ -113,7 +111,7 @@ class WordBank {
         ];
         break;
       case 3:
-        wordlist = [
+        this.wordList = [
           "New York",
           "State",
           "Bermuda",
@@ -147,7 +145,7 @@ class WordBank {
         ];
         break;
       case 4:
-        wordlist = [
+        this.wordList = [
           "Spring",
           "Match",
           "Diamond",
@@ -181,7 +179,7 @@ class WordBank {
         ];
         break;
       case 5:
-        wordlist = [
+        this.wordList = [
           "Court",
           "Iron",
           "Whale",
@@ -214,12 +212,39 @@ class WordBank {
           "Pie"
         ];
         break;
+    } // switch
+    
+
+    // for (var i = 0; i < 25; i++)
+    // {
+    //   var temp;
+    //   temp = this.getRandomWord();
+    //   this.removeWord(temp);
+    // }
+    // console.log(this.blueTeamWords);
+    // console.log(this.redTeamWords);
+    // console.log(this.neutralWords);
+    // console.log(this.assasinWord);
+
+  }
+
+  getRandomInt(max) {
+    return Math.floor(Math.random() * Math.floor(max));
+  } //randint
+
+  getRandomWord(listOfWords) {
+    return this.wordList[Math.floor(Math.random() * this.wordList.length)];
+  }
+
+  removeWord(listOfWords, word) {
+    const index = listOfWords.indexOf(word);
+    if (index > -1) {
+      array.splice(index, 1);
     }
-
-    return wordlist;
-
-  } // generateGameWords()
+  }
 
 } //class WordBank
 
 module.exports = WordBank;
+
+

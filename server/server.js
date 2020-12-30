@@ -4,8 +4,7 @@ const express = require('express');
 const socketio = require('socket.io');
 // Local Files
 const WordBank = require('./wordbank');
-const { exists } = require('fs');
-
+// Server Setup
 const app = express();
 const PORT = 8000;
 const DEBUG = true;
@@ -28,14 +27,15 @@ server.listen(PORT, () => {
     console.log(`Server started on http://localhost:${PORT}`);
 });
 
+// Game Logic
+// TODO: on a 'new game' request (not a new socket), send the wordlist
 var players = {}; // player object list
 
-const wordlist = new WordBank(); 
-const gameWords = wordlist.generateGameWords();
-//console.log(gameWords);
+const wordBank = new WordBank(); 
+//console.log(wordBank.wordList.length);
 
-// TODO: on a 'new game' request (not a new socket), send the wordlist
 
+// Socket Logic
 io.on('connection', onConnect);
 
 function onConnect(socket) {
@@ -54,14 +54,16 @@ function onConnect(socket) {
      socket.emit('currentPlayers', players);
      // update all other players of the new player
      socket.broadcast.emit('newPlayer', players[socket.id]);
- 
+     io.emit('eventMessage', 'Player Connected.' + ' Current Players: ' + Object.size(players));
      // when a player disconnects, remove them from our players object
      socket.on('disconnect', function () {
          console.log('user disconnected');
          // remove this player from our players object
-         delete players[socket.id];
+         
          // emit a message to all players to remove this player
          io.emit('userQuit', socket.id);
+         delete players[socket.id];
+         io.emit('eventMessage', 'Player Left.' + ' Current Players: ' + Object.size(players));
      });
  
      // when a player moves, update the player data
@@ -93,8 +95,30 @@ function onConnect(socket) {
         socket.emit('evalAnswer', 'Does not exist. Try something else.');
         }
      });
+      // word submission
+      socket.on('submitWord', function(data) {
+            if (players[socket.id].team == 'red') console.log('Word: ' + data + ' Player is on red team.');
+            else if (players[socket.id].team == 'blue') console.log('Word ' + data + ' Player is on blue team.')
+     });
 
 } // --> onConnect
 
+// find the size of an object
+Object.size = function(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
+};
 
-
+// Count all players on blue or red team
+// This will be important when it's time to
+// Determine if everyone made their submission or not
+/*
+Object.keys(players).forEach(function() {
+    if (players[socket.id].team == 'blue') {
+      console.log('blue');
+    }
+  });
+*/

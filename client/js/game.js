@@ -81,7 +81,6 @@ function create() {
     // Generate world
     //this.add.image(0, 0, 'space');
 
-
     this.cameras.main.setViewport(0, 0, 820, 820).setZoom(1.2); //.setZoom(1.5)
 
     const level = [
@@ -191,7 +190,7 @@ function create() {
         el.innerHTML = text;
         parent.appendChild(el);
     };
-    const eventMessage = (text, color) => {
+    const eventMessage = (text, color='black') => {
         /* Writes string to the #events element */
         // <ul> element
         const parent = document.querySelector('#events');
@@ -199,7 +198,7 @@ function create() {
         const el = document.createElement('li');
         if (color === 'red') el.className = "event-message-red";
         else if (color === 'blue') el.className = "event-message-blue";
-
+        else el.className = "event-message-black";
         el.innerHTML = text;
         parent.appendChild(el);
     };
@@ -235,6 +234,7 @@ function create() {
         //console.log(self.platforms.labels[this_tile.uniqueID].text);
         confirm_button.toggle = 'off';
         self.socket.emit('eventMessage', self.player.name + ' confirmed the word ' + self.platforms.labels[this_tile.uniqueID].text + ' !', self.player.team);
+        self.socket.emit('submitWord', self.platforms.labels[this_tile.uniqueID].text)
       });
 
 }
@@ -288,7 +288,6 @@ function update() {
             direction: this.player.direction
         };
 
-        
         var current_tile = this.platforms.getTileAtWorldXY(this.player.x, this.player.y, true);
         
         try{ // wrap in try in case player tries to go off map
