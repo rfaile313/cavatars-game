@@ -75,8 +75,12 @@ function onConnect(socket) {
      });
 
      // chat message
-     socket.on('message', function(data){
-        io.emit('message', data);
+     socket.on('chatMessage', function(data){
+        io.emit('chatMessage', data);
+     });
+     // event message
+     socket.on('eventMessage', function(data, color){
+        io.emit('eventMessage', data, color);
      });
      // server debug
      socket.on('evalServer', function(data){

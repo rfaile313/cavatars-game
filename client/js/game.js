@@ -60,9 +60,6 @@ var confirm_button;
 var unique_tile_id_counter = 0;
   // labeled tile array
  
-
-
-
 const game = new Phaser.Game(config);
 
 function preload() {
@@ -185,7 +182,7 @@ function create() {
     this.cursors = this.input.keyboard.createCursorKeys();
 
     // Chat client functions
-    const writeEvent = (text) => {
+    const chatMessage = (text) => {
         /* Writes string to the #events element */
         // <ul> element
         const parent = document.querySelector('#events');
@@ -194,6 +191,19 @@ function create() {
         el.innerHTML = text;
         parent.appendChild(el);
     };
+    const eventMessage = (text, color) => {
+        /* Writes string to the #events element */
+        // <ul> element
+        const parent = document.querySelector('#events');
+        // <li> element
+        const el = document.createElement('li');
+        if (color === 'red') el.className = "event-message-red";
+        else if (color === 'blue') el.className = "event-message-blue";
+
+        el.innerHTML = text;
+        parent.appendChild(el);
+    };
+
     const evalAnswer = (text) => {
         console.log(text);
     };
@@ -207,7 +217,7 @@ function create() {
             this.socket.emit('evalServer', input.value.slice(1));
         }
         else
-            this.socket.emit('message', input.value);
+            this.socket.emit('chatMessage', input.value);
 
         input.value = ''; // Clear text after send
     };
@@ -215,15 +225,16 @@ function create() {
     // Chat event listener
     document.querySelector('#chat-form').addEventListener('submit', onFormSubmitted);
     // Whenever sock.on 'message' happens, call writeEvent
-    this.socket.on('message', writeEvent);
+    this.socket.on('chatMessage', chatMessage);
     this.socket.on('evalAnswer', evalAnswer);
+    this.socket.on('eventMessage', eventMessage);
 
     confirm_button = create_button(self, (GAME_WIDTH / 2), 725, 'confirm');
     confirm_button.on("pointerdown", function (pointer) {
         var this_tile = self.platforms.getTileAtWorldXY(self.player.x, self.player.y, true);
         //console.log(self.platforms.labels[this_tile.uniqueID].text);
         confirm_button.toggle = 'off';
-        self.socket.emit('message', self.player.name + ' confirmed the word ' + self.platforms.labels[this_tile.uniqueID].text + ' !');
+        self.socket.emit('eventMessage', self.player.name + ' confirmed the word ' + self.platforms.labels[this_tile.uniqueID].text + ' !', self.player.team);
       });
 
 }

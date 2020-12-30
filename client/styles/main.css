@@ -16,7 +16,6 @@ li {
 }
 /*********************************/
 
-
 /*Game and chat go next to one another */
 #game{
     display: inline-block;
@@ -25,5 +24,16 @@ li {
     display: inline-block;
     vertical-align:top;
     max-width: 250px;
+}
+/*********************************/
+
+/* Style event messages to be different from chat */
+.event-message-red{
+color: red;
+font-weight: bold;
+}
+.event-message-blue{
+color: blue;
+font-weight: bold;
 }
 /*********************************/
