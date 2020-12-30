@@ -57,6 +57,7 @@ code1 = [
 // ^^ erase after ttesting 
 var last_tile;
 var confirm_button;
+var unique_tile_id_counter = 0;
   // labeled tile array
  
 
@@ -107,18 +108,15 @@ function create() {
     this.platforms = map.createDynamicLayer(0, tiles, 0, 0);
     this.platforms.labels = [];
 
-
-  
-    // assign the tiles which will be labeled
+    // assign the tiles which will be labeled && assign unique id
     for (var i = 0; i < this.platforms.layer.data.length; i++) {
-        for (var j = 0; j < this.platforms.layer.data[i].length; j++) {
+        for (var j = 0; j < this.platforms.layer.data.length; j++) {
             if (this.platforms.layer.data[i][j].index == 2) {
                 this.platforms.labels.push(this.platforms.layer.data[i][j]);
+                this.platforms.layer.data[i][j].uniqueID = unique_tile_id_counter++;
             }
         }
     }
-    //console.log(tileLabels);
-
     // assign labels to tiles
     for (var i = 0; i < this.platforms.labels.length; i++) {
         this.platforms.labels[i] = this.add.text(
@@ -135,6 +133,7 @@ function create() {
             }
         );
     }
+    
     
     // Generate Player(s)
     this.otherPlayers = this.physics.add.group();
@@ -221,19 +220,10 @@ function create() {
 
     confirm_button = create_button(self, (GAME_WIDTH / 2), 725, 'confirm');
     confirm_button.on("pointerdown", function (pointer) {
-
-            //console.log(self.platforms.labels);
-            var this_tile = self.platforms.getTileAtWorldXY(self.player.x, self.player.y, true);
-            console.log(this_tile);
-            console.log(self.platforms);
-            //var a = self.platforms.labels.indexOf(this_tile);
-        
-        
-        //console.log(check_current_tile.layer.tilemapLayer.labels[index_value_x + index_value_y].text);
-        //var tile_text = tileLabels[check_current_tile.x];
-       
+        var this_tile = self.platforms.getTileAtWorldXY(self.player.x, self.player.y, true);
+        //console.log(self.platforms.labels[this_tile.uniqueID].text);
         confirm_button.toggle = 'off';
-        //self.socket.emit('message', self.player.name + ' confirmed the word ' + tile_text + ' !');
+        self.socket.emit('message', self.player.name + ' confirmed the word ' + self.platforms.labels[this_tile.uniqueID].text + ' !');
       });
 
 }
