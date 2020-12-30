@@ -1,15 +1,17 @@
 const DEBUG = true;
+const GAME_WIDTH = 820;
+const GAME_HEIGHT = 820;
 
 var config = {
     type: Phaser.AUTO,
     parent: 'game',
-    pixelArt: true,
-    width: 820,
-    height: 820,
+    pixelArt: false,
+    width: GAME_WIDTH,
+    height: GAME_HEIGHT,
     physics: {
         default: 'arcade',
         arcade: {
-            debug: DEBUG
+            debug: false
         }
     },
     scene: {
@@ -53,6 +55,12 @@ code1 = [
     "Death",
 ];
 // ^^ erase after ttesting 
+var last_tile;
+var confirm_button;
+  // labeled tile array
+ 
+
+
 
 const game = new Phaser.Game(config);
 
@@ -61,7 +69,7 @@ function preload() {
     this.load.image('space', '../assets/space.png');
     this.load.image('ground', '../assets/platform.png');
     this.load.image("tiles", "../assets/576x96-96x96.png");
-    this.load.image("tiles_resized", "../assets/resized.png");
+    this.load.image("confirm", "../assets/button-confirm.png");
     this.load.spritesheet('char_sheet_1', '../assets/future1.png', { frameWidth: 26, frameHeight: 36 });
     //this.load.bitmapFont('myFont', '../assets/font_0.png', '../assets/font.fnt');
 }
@@ -74,6 +82,7 @@ function create() {
 
     // Generate world
     //this.add.image(0, 0, 'space');
+
 
     this.cameras.main.setViewport(0, 0, 820, 820).setZoom(1.2); //.setZoom(1.5)
 
@@ -96,26 +105,25 @@ function create() {
     });
     const tiles = map.addTilesetImage("tiles");
     this.platforms = map.createDynamicLayer(0, tiles, 0, 0);
+    this.platforms.labels = [];
 
 
-    // labeled tile array
-    var tileLabels = [];
-
+  
     // assign the tiles which will be labeled
     for (var i = 0; i < this.platforms.layer.data.length; i++) {
         for (var j = 0; j < this.platforms.layer.data[i].length; j++) {
             if (this.platforms.layer.data[i][j].index == 2) {
-                tileLabels.push(this.platforms.layer.data[i][j]);
+                this.platforms.labels.push(this.platforms.layer.data[i][j]);
             }
         }
     }
     //console.log(tileLabels);
 
     // assign labels to tiles
-    for (var i = 0; i < tileLabels.length; i++) {
-        tileLabels[i] = this.add.text(
-            tileLabels[i].pixelX + 10,
-            tileLabels[i].pixelY + 30,
+    for (var i = 0; i < this.platforms.labels.length; i++) {
+        this.platforms.labels[i] = this.add.text(
+            this.platforms.labels[i].pixelX + 10,
+            this.platforms.labels[i].pixelY + 30,
 
             // for now just get locally to test
             code1[i],
@@ -127,7 +135,7 @@ function create() {
             }
         );
     }
-
+    
     // Generate Player(s)
     this.otherPlayers = this.physics.add.group();
     this.socket.on('currentPlayers', function (players) {
@@ -210,6 +218,24 @@ function create() {
     // Whenever sock.on 'message' happens, call writeEvent
     this.socket.on('message', writeEvent);
     this.socket.on('evalAnswer', evalAnswer);
+
+    confirm_button = create_button(self, (GAME_WIDTH / 2), 725, 'confirm');
+    confirm_button.on("pointerdown", function (pointer) {
+
+            //console.log(self.platforms.labels);
+            var this_tile = self.platforms.getTileAtWorldXY(self.player.x, self.player.y, true);
+            console.log(this_tile);
+            console.log(self.platforms);
+            //var a = self.platforms.labels.indexOf(this_tile);
+        
+        
+        //console.log(check_current_tile.layer.tilemapLayer.labels[index_value_x + index_value_y].text);
+        //var tile_text = tileLabels[check_current_tile.x];
+       
+        confirm_button.toggle = 'off';
+        //self.socket.emit('message', self.player.name + ' confirmed the word ' + tile_text + ' !');
+      });
+
 }
 
 function update() {
@@ -260,8 +286,33 @@ function update() {
             rotation: this.player.rotation,
             direction: this.player.direction
         };
+
+        
+        var current_tile = this.platforms.getTileAtWorldXY(this.player.x, this.player.y, true);
+        
+        try{ // wrap in try in case player tries to go off map
+        if (current_tile.index == 2 && this.player.team === 'red' && confirm_button.toggle === 'on'){
+            current_tile.tint = 0xFFCFCF; //light red
+            confirm_button.visible = true;
+        }
+        else if (current_tile.index == 2 && this.player.team === 'blue' && confirm_button.toggle === 'on'){
+            current_tile.tint = 0x85C1E9; //light blue
+            confirm_button.visible = true;
+        }
+        if (last_tile && last_tile != current_tile) {
+            last_tile.tint = 0xffffff; //clears 
+        }
+        if (current_tile.index != 2 || confirm_button.toggle != 'on'){
+            confirm_button.visible = false;
+        }
+        last_tile = current_tile;
     }
-}
+    catch(e){
+        // Do nothing if no index and world wrap will catch
+    }
+    } // --> player movement + tile + emit
+
+} // --> update()
 
 function addPlayer(self, playerInfo) {
     console.log('adding player');
@@ -270,12 +321,13 @@ function addPlayer(self, playerInfo) {
     //self.player.body.offset.y = 38;
     self.player.setBounce(0.2);
     self.player.name = playerInfo.name;
+    self.player.team = playerInfo.team;
     if (playerInfo.team === 'blue') {
         //self.player.setTint(0x0000ff);
     } else {
         //self.player.setTint(0xff0000);
     }
-    //  Our player animations, turning, walking left and walking right.
+    // player animations
     self.anims.create({
         key: 'left',
         frames: self.anims.generateFrameNumbers('char_sheet_1', { start: 12, end: 14 }),
@@ -306,12 +358,9 @@ function addPlayer(self, playerInfo) {
         //frameRate: 20
     });
 
-
-
     self.physics.add.collider(self.player, self.platforms);
     // camera follows player
     self.cameras.main.startFollow(self.player);
-
 }
 
 function addOtherPlayers(self, playerInfo) {
@@ -324,11 +373,34 @@ function addOtherPlayers(self, playerInfo) {
     }
     otherPlayer.playerId = playerInfo.playerId;
     otherPlayer.name = playerInfo.name;
+    otherPlayer.team = playerInfo.team;
     self.otherPlayers.add(otherPlayer);
 
     self.physics.add.collider(otherPlayer, self.platforms);
 }
 
+function create_button(self, x, y, source){
+    var button;
+    button = self.add.image(x, y, source).setInteractive();
+    button.setScrollFactor(0);
+    button.visible = false;
+    button.on("pointerover", function (pointer) {
+        button.setScale(1.1);
+      });
+      button.on("pointerout", function (pointer) {
+        button.setScale(1);
+      });
+      button.toggle = 'on';
+    return button;
+}
+
+
+// Debugging
+
+// player object
+// game.scene.scenes[0].player
+// example:
+// game.scene.scenes[0].player.name
 
 
 // GRAVEYARD
