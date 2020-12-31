@@ -1,15 +1,17 @@
 class WordBank {
 
   constructor() {
-    this.wordList;
-    this.blueTeamWords;
-    this.redTeamWords;
-    this.neutralWords;
-    this.assasinWord;
+    this.initialWordList = [];
+    this.wordList = [];
+    this.blueTeamWords = [];
+    this.redTeamWords = [];
+    this.neutralWords = [];
+    this.assasinWord = [];
     const selectList = this.getRandomInt(7); //change this if you add more lists
+    
     switch (selectList) {
       case 0:
-        this.wordList = [
+        this.initialWordList = [
           "Hollywood",
           "Screen",
           "Play",
@@ -43,7 +45,7 @@ class WordBank {
         ];
         break;
       case 1:
-        this.wordList = [
+        this.initialWordList = [
           "Well",
           "Fair",
           "Tooth",
@@ -77,7 +79,7 @@ class WordBank {
         ];
         break;
       case 2:
-        this.wordList = [
+        this.initialWordList = [
           "Foot",
           "Torch",
           "Arm",
@@ -111,7 +113,7 @@ class WordBank {
         ];
         break;
       case 3:
-        this.wordList = [
+        this.initialWordList = [
           "New York",
           "State",
           "Bermuda",
@@ -145,7 +147,7 @@ class WordBank {
         ];
         break;
       case 4:
-        this.wordList = [
+        this.initialWordList = [
           "Spring",
           "Match",
           "Diamond",
@@ -179,7 +181,7 @@ class WordBank {
         ];
         break;
       case 5:
-        this.wordList = [
+        this.initialWordList = [
           "Court",
           "Iron",
           "Whale",
@@ -213,18 +215,35 @@ class WordBank {
         ];
         break;
     } // switch
-    
 
-    // for (var i = 0; i < 25; i++)
-    // {
-    //   var temp;
-    //   temp = this.getRandomWord();
-    //   this.removeWord(temp);
-    // }
-    // console.log(this.blueTeamWords);
-    // console.log(this.redTeamWords);
-    // console.log(this.neutralWords);
-    // console.log(this.assasinWord);
+
+    for (var i = 0; i < 25; i++) {
+      if (i < 8) {
+        var temp = this.getRandomWord();
+        this.blueTeamWords.push(temp);
+        this.wordList.push(temp);
+        this.removeWord(temp);
+      }
+      if (i >= 8 && i < 16) {
+        var temp = this.getRandomWord();
+        this.redTeamWords.push(temp);
+        this.wordList.push(temp);
+        this.removeWord(temp);
+      }
+      if (i >= 16 && i < 24) {
+        var temp = this.getRandomWord();
+        this.neutralWords.push(temp);
+        this.wordList.push(temp);
+        this.removeWord(temp);
+      }
+      if (i >= 24 && i < 25) {
+        var temp = this.getRandomWord();
+        this.assasinWord.push(temp);
+        this.wordList.push(temp);
+        this.removeWord(temp);
+      }
+
+    }
 
   }
 
@@ -232,14 +251,16 @@ class WordBank {
     return Math.floor(Math.random() * Math.floor(max));
   } //randint
 
-  getRandomWord(listOfWords) {
-    return this.wordList[Math.floor(Math.random() * this.wordList.length)];
+  getRandomWord() {
+    var currentLength = this.initialWordList.length;
+    var returnOne = this.initialWordList[Math.floor(Math.random() * currentLength)];
+    return returnOne;
   }
 
-  removeWord(listOfWords, word) {
-    const index = listOfWords.indexOf(word);
-    if (index > -1) {
-      array.splice(index, 1);
+  removeWord(word) {
+    const index = this.initialWordList.indexOf(word);
+    if (index !== -1) {
+      this.initialWordList.splice(index, 1);
     }
   }
 

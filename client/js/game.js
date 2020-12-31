@@ -22,43 +22,13 @@ var config = {
 };
 
 //global game variables here
-code1 = [
-    "Hollywood",
-    "Screen",
-    "Play",
-    "Marble",
-    "Dinosaur",
-    "Cat",
-    "Pitch",
-    "Bond",
-    "Greece",
-    "Deck",
-    "Spike",
-    "Center",
-    "Vacuum",
-    "Unicorn",
-    "Undertaker",
-    "Sock",
-    "Loch Ness",
-    "Horse",
-    "Berlin",
-    "Platypus",
-    "Port",
-    "Chest",
-    "Box",
-    "Compound",
-    "Ship",
-    "Watch",
-    "Space",
-    "Flute",
-    "Tower",
-    "Death",
-];
-// ^^ erase after ttesting 
 var last_tile;
 var confirm_button;
+// labeled tile array
 var unique_tile_id_counter = 0;
-  // labeled tile array
+// holds wordList
+var wordList = [];
+
  
 const game = new Phaser.Game(config);
 
@@ -79,7 +49,41 @@ function create() {
     this.socket = io();
 
     // Generate world
-    //this.add.image(0, 0, 'space');
+    // this.add.image(0, 0, 'space');
+
+    // Get Word List from server
+    // TODO: wrap this in a promise in case it takes
+    // longer than expected
+    this.socket.on('wordList', function(data){  
+        clone_array(data);
+        // text assignment has to go in the socket function
+        // so that it's ready at the same time. i think maybe
+        // only way to do it without a promise 
+        for (var i = 0; i < self.platforms.labels.length; i++) {
+            self.platforms.labels[i] = self.add.text(
+                self.platforms.labels[i].pixelX + 10,
+                self.platforms.labels[i].pixelY + 30,
+    
+                wordList[i],
+                {
+                    fontFamily: "Verdana",
+                    fontWeight: "bold",
+                    fontSize: "14px",
+                    fill: "#000",
+                }
+            );
+        }
+    });
+
+    //console.log(wordList["0"]);
+      
+    //console.log(typeof(wordList));
+
+
+    //const values = Object.values(wordList);
+    //console.log(values);
+
+    //Object.entries(wordList).forEach(([key, value]) => console.log(`${key}: ${value}`));
 
     this.cameras.main.setViewport(0, 0, 820, 820).setZoom(1.2); //.setZoom(1.5)
 
@@ -113,24 +117,8 @@ function create() {
             }
         }
     }
-    // assign labels to tiles
-    for (var i = 0; i < this.platforms.labels.length; i++) {
-        this.platforms.labels[i] = this.add.text(
-            this.platforms.labels[i].pixelX + 10,
-            this.platforms.labels[i].pixelY + 30,
 
-            // for now just get locally to test
-            code1[i],
-            {
-                fontFamily: "Verdana",
-                fontWeight: "bold",
-                fontSize: "14px",
-                fill: "#000",
-            }
-        );
-    }
-    
-    
+
     // Generate Player(s)
     this.otherPlayers = this.physics.add.group();
     this.socket.on('currentPlayers', function (players) {
@@ -419,3 +407,13 @@ function create_button(self, x, y, source){
         );
     }
     */
+
+    function clone_array(source){
+        for (var i = 0; i < source.length; i++)
+        {
+            wordList[i] = source[i];
+           
+        }
+        console.log(wordList);
+    }
+

@@ -28,11 +28,27 @@ server.listen(PORT, () => {
 });
 
 // Game Logic
-// TODO: on a 'new game' request (not a new socket), send the wordlist
 var players = {}; // player object list
 
-const wordBank = new WordBank(); 
-//console.log(wordBank.wordList.length);
+const wordBank = new WordBank();
+
+const wordList = Object.values(wordBank.wordList);
+
+// console.log(wordList);
+// console.log(typeof(wordList));
+
+// for (var i = 0; i < 25; i++)
+// {
+//     console.log(wordList[i]);
+// }
+
+
+// console.log('Full Word List ' + wordBank.wordList);
+// console.log(wordBank.blueTeamWords);
+// console.log(wordBank.redTeamWords);
+// console.log(wordBank.neutralWords);
+// console.log(wordBank.assasinWord);
+
 
 
 // Socket Logic
@@ -55,6 +71,9 @@ function onConnect(socket) {
      // update all other players of the new player
      socket.broadcast.emit('newPlayer', players[socket.id]);
      io.emit('eventMessage', 'Player Connected.' + ' Current Players: ' + Object.size(players));
+     // Send Vanilla Wordlist
+     socket.emit('wordList', wordList);
+
      // when a player disconnects, remove them from our players object
      socket.on('disconnect', function () {
          console.log('user disconnected');
@@ -65,7 +84,8 @@ function onConnect(socket) {
          delete players[socket.id];
          io.emit('eventMessage', 'Player Left.' + ' Current Players: ' + Object.size(players));
      });
- 
+
+
      // when a player moves, update the player data
      socket.on('playerMovement', function (movementData) {
          players[socket.id].x = movementData.x;
