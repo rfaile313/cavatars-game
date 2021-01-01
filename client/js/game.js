@@ -24,6 +24,7 @@ var config = {
 // global game variables here
 var last_tile;
 var confirm_button;
+var didOtherPlayerNameChange;
 // labeled tile array
 var unique_tile_id_counter = 0;
 // holds wordList
@@ -98,6 +99,27 @@ function create() {
     this.socket.on('newPlayer', function (playerInfo) {
         addOtherPlayers(self, playerInfo);
     });
+
+    this.socket.on('setOverheadName', function (name) {
+        // Truncate to 10 char max
+        var truncated = name.slice(0, 10);
+        // clear first if exists
+        if (self.player.overheadName) self.player.overheadName.destroy(); 
+        // --------------
+        var hexString = assignRandomPhaserColor();
+        
+        self.player.name = truncated;
+        self.player.overheadName = self.add.text( (GAME_WIDTH / 2) - 20, (GAME_HEIGHT / 2) - 40, truncated, { 
+            fontFamily: 'Arial',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            fill: hexString });
+        self.player.overheadName.setShadow(1, 1, 'black');
+        self.player.overheadName.setScrollFactor(0);
+        
+    });
+    
+
     this.socket.on('userQuit', function (playerId) {
         self.otherPlayers.getChildren().forEach(function (otherPlayer) {
             if (playerId === otherPlayer.playerId) {
@@ -106,11 +128,31 @@ function create() {
         });
     });
 
+    this.socket.on('otherPlayerNameChanged', function (playerInfo){
+        self.otherPlayers.getChildren().forEach(function (otherPlayer){
+            var name = playerInfo.name; 
+            otherPlayer.overheadName.destroy();
+            var hexString = assignRandomPhaserColor();
+            otherPlayer.overheadName = self.add.text( playerInfo.x - 30, playerInfo.y - 40, name, { 
+                fontFamily: 'Arial',
+                fontSize: '16px',
+                fontWeight: 'bold',
+                fill: hexString 
+            });
+        
+            otherPlayer.overheadName.setShadow(1, 1, 'black');
+        });
+    });
+
     this.socket.on('playerMoved', function (playerInfo) {
+     
         self.otherPlayers.getChildren().forEach(function (otherPlayer) {
             if (playerInfo.playerId === otherPlayer.playerId) {
-                otherPlayer.setRotation(playerInfo.rotation);
+                //otherPlayer.setRotation(playerInfo.rotation);
                 otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+
+                otherPlayer.overheadName.setPosition(playerInfo.x - 30, playerInfo.y - 40);
+                
                 if (playerInfo.direction == 'left') {
                     otherPlayer.anims.play('left', true);
                 }
@@ -125,9 +167,14 @@ function create() {
                 }
                 else
                     otherPlayer.anims.play('turn', true);
+
+                
             }
-        });
-    });
+
+
+        }); // playerMoved 
+
+    }); // ---> create()
 
     
     // TODO: wrap this in a promise in case it takes
@@ -162,13 +209,13 @@ function create() {
     // Chat client functions
     // TODO: Once players can choose their own names
     // Prepend 'Player: ' to each message. 
-    const chatMessage = (text) => {
+    const chatMessage = (text, name) => {
         /* Writes string to the #events element */
         // <ul> element
         const parent = document.querySelector('#events');
         // <li> element
         const el = document.createElement('li');
-        el.innerHTML = text;
+        el.innerHTML = name + ': ' + text;
         parent.appendChild(el);
     };
     const eventMessage = (text, color='black') => {
@@ -188,22 +235,27 @@ function create() {
         console.log(text);
     };
 
-    const onFormSubmitted = (e) => {
+    const onChatSubmitted = (e) => {
         e.preventDefault();
-
         const input = document.querySelector('#chat');
-
         if (DEBUG && input.value[0] === '/') {
             this.socket.emit('evalServer', input.value.slice(1));
         }
         else
             this.socket.emit('chatMessage', input.value);
+        input.value = ''; // Clear text after send
+    };
 
+    const onNameSubmitted = (e) => {
+        e.preventDefault();
+        const input = document.querySelector('#playerName');
+        this.socket.emit('setPlayerName', input.value, self.player.x, self.player.y);
         input.value = ''; // Clear text after send
     };
 
     // Chat event listener
-    document.querySelector('#chat-form').addEventListener('submit', onFormSubmitted);
+    document.querySelector('#chat-form').addEventListener('submit', onChatSubmitted);
+    document.querySelector('#name-form').addEventListener('submit', onNameSubmitted);
     // Whenever sock.on 'message' happens, call writeEvent
     this.socket.on('chatMessage', chatMessage);
     this.socket.on('evalAnswer', evalAnswer);
@@ -355,8 +407,18 @@ function addOtherPlayers(self, playerInfo) {
     otherPlayer.playerId = playerInfo.playerId;
     otherPlayer.name = playerInfo.name;
     otherPlayer.team = playerInfo.team;
-    self.otherPlayers.add(otherPlayer);
 
+    var hexString = assignRandomPhaserColor();
+    otherPlayer.overheadName = self.add.text( playerInfo.x - 30, playerInfo.y - 40, otherPlayer.name, { 
+        fontFamily: 'Arial',
+        fontSize: '16px',
+        fontWeight: 'bold',
+        fill: hexString });
+
+    otherPlayer.overheadName.setShadow(1, 1, 'black');
+                
+
+    self.otherPlayers.add(otherPlayer);
     self.physics.add.collider(otherPlayer, self.platforms);
 }
 
@@ -381,8 +443,22 @@ function clone_array(source){
         wordList[i] = source[i];
        
     }
-    console.log(wordList);
+    //console.log(wordList);
 }
+
+function assignRandomPhaserColor(){
+    var newColor = new Phaser.Display.Color();
+    newColor.random(0, 255);
+    var convertColor = Phaser.Display.Color.RGBToString(
+        newColor.r,
+        newColor.g,
+        newColor.b,
+        newColor.a
+      );
+return convertColor;
+}
+
+
 
 
 

@@ -11,3 +11,4 @@
 8. Players choose teams
 9. teams choose spymaster for that game
 10. spymaster gets full map - in the actual game does the spymaster know which word is the assassin word or only know the neutral words?
+11. move self.add.text to its own function
