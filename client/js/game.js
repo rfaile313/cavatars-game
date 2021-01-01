@@ -21,7 +21,7 @@ var config = {
     }
 };
 
-//global game variables here
+// global game variables here
 var last_tile;
 var confirm_button;
 // labeled tile array
@@ -29,13 +29,12 @@ var unique_tile_id_counter = 0;
 // holds wordList
 var wordList = [];
 
- 
 const game = new Phaser.Game(config);
 
 function preload() {
-    this.load.image('sky', '../assets/sky.png');
-    this.load.image('space', '../assets/space.png');
-    this.load.image('ground', '../assets/platform.png');
+    //this.load.image('sky', '../assets/sky.png');
+    //this.load.image('space', '../assets/space.png');
+    //this.load.image('ground', '../assets/platform.png');
     this.load.image("tiles", "../assets/576x96-96x96.png");
     this.load.image("confirm", "../assets/button-confirm.png");
     this.load.spritesheet('char_sheet_1', '../assets/future1.png', { frameWidth: 26, frameHeight: 36 });
@@ -45,45 +44,10 @@ function preload() {
 function create() {
 
     // socket & self setup
+    // need to assign scene object function this
+    // to self in order to use it in a nested function
     var self = this;
     this.socket = io();
-
-    // Generate world
-    // this.add.image(0, 0, 'space');
-
-    // Get Word List from server
-    // TODO: wrap this in a promise in case it takes
-    // longer than expected
-    this.socket.on('wordList', function(data){  
-        clone_array(data);
-        // text assignment has to go in the socket function
-        // so that it's ready at the same time. i think maybe
-        // only way to do it without a promise 
-        for (var i = 0; i < self.platforms.labels.length; i++) {
-            self.platforms.labels[i] = self.add.text(
-                self.platforms.labels[i].pixelX + 10,
-                self.platforms.labels[i].pixelY + 30,
-    
-                wordList[i],
-                {
-                    fontFamily: "Verdana",
-                    fontWeight: "bold",
-                    fontSize: "14px",
-                    fill: "#000",
-                }
-            );
-        }
-    });
-
-    //console.log(wordList["0"]);
-      
-    //console.log(typeof(wordList));
-
-
-    //const values = Object.values(wordList);
-    //console.log(values);
-
-    //Object.entries(wordList).forEach(([key, value]) => console.log(`${key}: ${value}`));
 
     this.cameras.main.setViewport(0, 0, 820, 820).setZoom(1.2); //.setZoom(1.5)
 
@@ -118,9 +82,9 @@ function create() {
         }
     }
 
-
-    // Generate Player(s)
+    // Add physics before we generate players
     this.otherPlayers = this.physics.add.group();
+    // Generate Player(s)
     this.socket.on('currentPlayers', function (players) {
         //console.log(players);
         Object.keys(players).forEach(function (id) {
@@ -165,10 +129,39 @@ function create() {
         });
     });
 
+    
+    // TODO: wrap this in a promise in case it takes
+    // longer than expected && Ensure it only happens
+    // before the client's player is rendered. OR 
+    // make sure the player is always on top with layering?
+    // Get Word List from server
+    this.socket.on('wordList', function(data){  
+        clone_array(data);
+        // text assignment has to go in the socket function
+        // so that it's ready at the same time. i think maybe
+        // only way to do it without a promise 
+        for (var i = 0; i < self.platforms.labels.length; i++) {
+            self.platforms.labels[i] = self.add.text(
+                self.platforms.labels[i].pixelX + 10,
+                self.platforms.labels[i].pixelY + 30,
+    
+                wordList[i],
+                {
+                    fontFamily: "Verdana",
+                    fontWeight: "bold",
+                    fontSize: "14px",
+                    fill: "#000",
+                }
+            );
+        }
+    });
+
     // Bind keys
     this.cursors = this.input.keyboard.createCursorKeys();
 
     // Chat client functions
+    // TODO: Once players can choose their own names
+    // Prepend 'Player: ' to each message. 
     const chatMessage = (text) => {
         /* Writes string to the #events element */
         // <ul> element
@@ -225,7 +218,7 @@ function create() {
         self.socket.emit('submitWord', self.platforms.labels[this_tile.uniqueID].text)
       });
 
-}
+} // --> create()
 
 function update() {
 
@@ -382,6 +375,16 @@ function create_button(self, x, y, source){
     return button;
 }
 
+function clone_array(source){
+    for (var i = 0; i < source.length; i++)
+    {
+        wordList[i] = source[i];
+       
+    }
+    console.log(wordList);
+}
+
+
 
 // Debugging
 
@@ -407,13 +410,4 @@ function create_button(self, x, y, source){
         );
     }
     */
-
-    function clone_array(source){
-        for (var i = 0; i < source.length; i++)
-        {
-            wordList[i] = source[i];
-           
-        }
-        console.log(wordList);
-    }
 

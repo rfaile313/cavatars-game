@@ -34,23 +34,6 @@ const wordBank = new WordBank();
 
 const wordList = Object.values(wordBank.wordList);
 
-// console.log(wordList);
-// console.log(typeof(wordList));
-
-// for (var i = 0; i < 25; i++)
-// {
-//     console.log(wordList[i]);
-// }
-
-
-// console.log('Full Word List ' + wordBank.wordList);
-// console.log(wordBank.blueTeamWords);
-// console.log(wordBank.redTeamWords);
-// console.log(wordBank.neutralWords);
-// console.log(wordBank.assasinWord);
-
-
-
 // Socket Logic
 io.on('connection', onConnect);
 
