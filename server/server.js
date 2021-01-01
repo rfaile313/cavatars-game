@@ -54,6 +54,8 @@ function onConnect(socket) {
     // update all other players of the new player
     socket.broadcast.emit('newPlayer', players[socket.id]);
     io.emit('eventMessage', 'Player Connected.' + ' Current Players: ' + Object.size(players));
+    io.emit('updateTeams', players);
+
     // Send Vanilla Wordlist
     socket.emit('wordList', wordList);
 
@@ -66,6 +68,7 @@ function onConnect(socket) {
         io.emit('userQuit', socket.id);
         delete players[socket.id];
         io.emit('eventMessage', 'Player Left.' + ' Current Players: ' + Object.size(players));
+        io.emit('updateTeams', players);
     });
 
     // when a player moves, update the player data

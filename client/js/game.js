@@ -305,21 +305,9 @@ function create() {
     };
     
     const removePlayersFromTable = () => {
-    
-        var on = true;
-        while (on){
-            try {
-            let redTableParent = document.querySelector('#redTeamTable');
-            let redTableChild = document.querySelector('.red-team-member');
-            let blueTableParent = document.querySelector('#blueTeamTable');
-            let blueTableChild = document.querySelector('.blue-team-member');
-            redTableParent.removeChild(redTableChild);
-            blueTableParent.removeChild(blueTableChild);
-            }
-            catch(e) {
-                var on = false;
-            }
-        }
+        const removeElements = (elms) => elms.forEach(el => el.remove());
+        removeElements( document.querySelectorAll(".blue-team-member") );
+        removeElements( document.querySelectorAll(".red-team-member") );
     };
 
     // Chat event listener
