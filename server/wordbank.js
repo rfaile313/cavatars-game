@@ -1,5 +1,4 @@
 class WordBank {
-
   constructor() {
     this.initialWordList = [];
     this.wordList = [];
@@ -8,7 +7,7 @@ class WordBank {
     this.neutralWords = [];
     this.assasinWord = [];
     const selectList = this.getRandomInt(7); //change this if you add more lists
-    
+
     switch (selectList) {
       case 0:
         this.initialWordList = [
@@ -211,11 +210,10 @@ class WordBank {
           "Degree",
           "Tokyo",
           "Church",
-          "Pie"
+          "Pie",
         ];
         break;
     } // switch
-
 
     for (var i = 0; i < 25; i++) {
       if (i < 8) {
@@ -242,9 +240,7 @@ class WordBank {
         this.wordList.push(temp);
         this.removeWord(temp);
       }
-
     }
-
   }
 
   getRandomInt(max) {
@@ -253,7 +249,9 @@ class WordBank {
 
   getRandomWord() {
     var currentLength = this.initialWordList.length;
-    var returnOne = this.initialWordList[Math.floor(Math.random() * currentLength)];
+    var returnOne = this.initialWordList[
+      Math.floor(Math.random() * currentLength)
+    ];
     return returnOne;
   }
 
@@ -263,9 +261,6 @@ class WordBank {
       this.initialWordList.splice(index, 1);
     }
   }
-
 } //class WordBank
 
 module.exports = WordBank;
-
-
