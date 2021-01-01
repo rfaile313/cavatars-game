@@ -55,6 +55,7 @@ function onConnect(socket) {
     socket.broadcast.emit('newPlayer', players[socket.id]);
     io.emit('eventMessage', 'Player Connected.' + ' Current Players: ' + Object.size(players));
     io.emit('updateTeams', players);
+    io.emit('setScore');
 
     // Send Vanilla Wordlist
     socket.emit('wordList', wordList);
