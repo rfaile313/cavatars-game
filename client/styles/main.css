@@ -7,6 +7,24 @@ li {
 }
 /*********************************/
 
+#redTeamButton{
+    margin-right: 8px;
+}
+#blueTeamButton{
+    margin-left: 2px;
+}
+
+td{
+    padding-left: 5px;
+}
+table{
+    display: inline-block;
+}
+
+#blueTeam #redTeam{
+    float: left;
+}
+
 /* Chat scrolls up...*/
 .event-container {
     height: 200px;

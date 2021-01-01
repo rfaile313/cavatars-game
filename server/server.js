@@ -109,8 +109,8 @@ function onConnect(socket) {
     });
     // word submission
     socket.on('submitWord', function (data) {
-        if (players[socket.id].team == 'red') console.log('Word: ' + data + ' Player is on red team.');
-        else if (players[socket.id].team == 'blue') console.log('Word ' + data + ' Player is on blue team.')
+        if (players[socket.id].team == 'red') console.log('Word: ' + data + '. ' + players[socket.id].name + ' is on red team.');
+        else if (players[socket.id].team == 'blue') console.log('Word ' + data +  '. ' + players[socket.id].name + ' is on blue team.')
     });
 
 } // --> onConnect
