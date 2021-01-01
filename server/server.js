@@ -46,7 +46,7 @@ function onConnect(socket) {
         x: 400,
         y: 150,
         playerId: socket.id,
-        team: (Math.floor(Math.random() * 2) == 0) ? 'red' : 'blue'
+        team: 'none'
     };
 
     // send the players object to the new player
@@ -68,7 +68,6 @@ function onConnect(socket) {
         io.emit('eventMessage', 'Player Left.' + ' Current Players: ' + Object.size(players));
     });
 
-
     // when a player moves, update the player data
     socket.on('playerMovement', function (movementData) {
         players[socket.id].x = movementData.x;
@@ -77,6 +76,12 @@ function onConnect(socket) {
         players[socket.id].direction = movementData.direction;
         // emit a message to all players about the player that moved
         socket.broadcast.emit('playerMoved', players[socket.id]);
+    });
+
+    // player joins a team
+    socket.on('joinTeam', function (data) {
+        players[socket.id].team = data;
+        io.emit('updateTeams', players);
     });
 
     // chat message

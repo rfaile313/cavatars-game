@@ -123,6 +123,7 @@ function create() {
     this.socket.on('userQuit', function (playerId) {
         self.otherPlayers.getChildren().forEach(function (otherPlayer) {
             if (playerId === otherPlayer.playerId) {
+                otherPlayer.overheadName.destroy();
                 otherPlayer.destroy();
             }
         });
@@ -253,13 +254,84 @@ function create() {
         input.value = ''; // Clear text after send
     };
 
+ 
+    const updateTeams = (players) => {
+
+        removePlayersFromTable();
+       
+            Object.keys(players).forEach(function (id) {
+                let parent;
+                let td;
+                let tr;
+                if (players[id].team === 'red'){
+                parent = document.querySelector('#redTeamTable');
+                tr = document.createElement('tr');
+                td = document.createElement('td');
+                td.innerHTML = players[id].name;
+                }
+                else if (players[id].team ==='blue') {
+
+                parent = document.querySelector('#blueTeamTable');
+                tr = document.createElement('tr');
+                td = document.createElement('td');
+                td.innerHTML = players[id].name;
+                }
+           
+                
+                if (players[id].team === 'red'){
+                    tr.className="red-team-member";
+                    tr.appendChild(td);
+                    parent.appendChild(tr);
+                    }
+                    else if (players[id].team === 'blue')  {
+                        tr.className="blue-team-member";
+                        tr.appendChild(td);
+                        parent.appendChild(tr);
+                    }
+              
+            
+               
+            });
+
+
+    };
+    
+
+    const joinRedTeam = (e) => {
+        this.socket.emit('joinTeam', 'red');
+    };
+    const joinBlueTeam = (e) => {
+        this.socket.emit('joinTeam', 'blue');
+    };
+    
+    const removePlayersFromTable = () => {
+    
+        var on = true;
+        while (on){
+            try {
+            let redTableParent = document.querySelector('#redTeamTable');
+            let redTableChild = document.querySelector('.red-team-member');
+            let blueTableParent = document.querySelector('#blueTeamTable');
+            let blueTableChild = document.querySelector('.blue-team-member');
+            redTableParent.removeChild(redTableChild);
+            blueTableParent.removeChild(blueTableChild);
+            }
+            catch(e) {
+                var on = false;
+            }
+        }
+    };
+
     // Chat event listener
     document.querySelector('#chat-form').addEventListener('submit', onChatSubmitted);
     document.querySelector('#name-form').addEventListener('submit', onNameSubmitted);
-    // Whenever sock.on 'message' happens, call writeEvent
+    document.getElementById('redTeamButton').addEventListener('click', joinRedTeam);
+    document.getElementById('blueTeamButton').addEventListener('click', joinBlueTeam);
+    // socket.on dom events
     this.socket.on('chatMessage', chatMessage);
     this.socket.on('evalAnswer', evalAnswer);
     this.socket.on('eventMessage', eventMessage);
+    this.socket.on('updateTeams', updateTeams);
 
     confirm_button = create_button(self, (GAME_WIDTH / 2), 725, 'confirm');
     confirm_button.on("pointerdown", function (pointer) {
@@ -408,6 +480,7 @@ function addOtherPlayers(self, playerInfo) {
     otherPlayer.name = playerInfo.name;
     otherPlayer.team = playerInfo.team;
 
+    if (otherPlayer.overheadName) otherPlayer.overheadName.destroy();
     var hexString = assignRandomPhaserColor();
     otherPlayer.overheadName = self.add.text( playerInfo.x - 30, playerInfo.y - 40, otherPlayer.name, { 
         fontFamily: 'Arial',
@@ -445,6 +518,16 @@ function clone_array(source){
     }
     //console.log(wordList);
 }
+
+
+// find the size of an object
+Object.size = function (obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
+};
 
 function assignRandomPhaserColor(){
     var newColor = new Phaser.Display.Color();
@@ -486,4 +569,16 @@ return convertColor;
         );
     }
     */
+
+//    var players = ['jake', 'john', 'paul'];
+
+//    for (let i=0; i < players.length; i++) {
+//    let parent = document.querySelector('#blueTeamTable');
+//    let tr = document.createElement('tr');
+//    let td = document.createElement('td');
+//    td.innerHTML = players[i];
+//    tr.className="blue-team-member";
+//    tr.appendChild(td);
+//    parent.appendChild(tr);
+//   }
 
