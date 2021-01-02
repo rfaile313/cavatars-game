@@ -220,25 +220,21 @@ class WordBank {
         var temp = this.getRandomWord();
         this.blueTeamWords.push(temp);
         this.wordList.push(temp);
-        this.removeWord(temp);
       }
       if (i >= 8 && i < 16) {
         var temp = this.getRandomWord();
         this.redTeamWords.push(temp);
         this.wordList.push(temp);
-        this.removeWord(temp);
       }
       if (i >= 16 && i < 24) {
         var temp = this.getRandomWord();
         this.neutralWords.push(temp);
         this.wordList.push(temp);
-        this.removeWord(temp);
       }
       if (i >= 24 && i < 25) {
         var temp = this.getRandomWord();
         this.assasinWord.push(temp);
         this.wordList.push(temp);
-        this.removeWord(temp);
       }
     }
   }
@@ -248,10 +244,12 @@ class WordBank {
   } //randint
 
   getRandomWord() {
+    //console.log(this.initialWordList.length);
     var currentLength = this.initialWordList.length;
-    var returnOne = this.initialWordList[
-      Math.floor(Math.random() * currentLength)
-    ];
+    var randomIndicie = this.getRandomInt(currentLength);
+    var returnOne = this.initialWordList[randomIndicie];
+    this.removeWord(this.initialWordList[randomIndicie]);
+    //console.log(returnOne);
     return returnOne;
   }
 
@@ -261,6 +259,7 @@ class WordBank {
       this.initialWordList.splice(index, 1);
     }
   }
+
 } //class WordBank
 
 module.exports = WordBank;

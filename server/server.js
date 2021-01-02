@@ -1,9 +1,9 @@
 // Node Modules
-const http = require('http');
-const express = require('express');
-const socketio = require('socket.io');
+const http = require("http");
+const express = require("express");
+const socketio = require("socket.io");
 // Local Files
-const WordBank = require('./wordbank');
+const WordBank = require("./wordbank");
 // Server Setup
 const app = express();
 const PORT = 8000;
@@ -12,134 +12,227 @@ const DEBUG = true;
 // Only allow index.html on / or /settings
 const indexPath = `${__dirname}/../client`;
 console.log(`Serving static file from ${indexPath}`);
-app.use('/', express.static(indexPath));
-app.use('/settings', express.static(__dirname + '/../client/settings.html'));
+app.use("/", express.static(indexPath));
+app.use("/settings", express.static(__dirname + "/../client/settings.html"));
 // Create http server with express app
 const server = http.createServer(app);
 // socketio init
 const io = socketio(server);
 
-server.on('error', (err) => {
-    console.error('Server Error:', err);
+server.on("error", (err) => {
+  console.error("Server Error:", err);
 });
 
 server.listen(PORT, () => {
-    console.log(`Server started on http://localhost:${PORT}`);
+  console.log(`Server started on http://localhost:${PORT}`);
 });
 
-// Game Logic
+// Game Logic / server global variables
 var players = {}; // player object list
 
 const wordBank = new WordBank();
 
 const wordList = Object.values(wordBank.wordList);
 
+let redTeamScore = 0;
+let blueTeamScore = 0;
+let redTeamSubmissionCount = 0;
+let blueTeamSubmissionCount = 0;
+
 // Socket Logic
-io.on('connection', onConnect);
+io.on("connection", onConnect);
 
 function onConnect(socket) {
-    console.log("New Client Connected: " + socket.id);
+  console.log("New Client Connected: " + socket.id);
 
-    players[socket.id] = {
-        name: ("Player" + socket.id).slice(0, 10),
-        rotation: 0,
-        x: 400,
-        y: 150,
-        playerId: socket.id,
-        team: 'none'
-    };
+  players[socket.id] = {
+    name: ("Player" + socket.id).slice(0, 10),
+    rotation: 0,
+    x: 400,
+    y: 150,
+    playerId: socket.id,
+    team: "none",
+  };
 
-    // send the players object to the new player
-    socket.emit('currentPlayers', players);
-    // update all other players of the new player
-    socket.broadcast.emit('newPlayer', players[socket.id]);
-    io.emit('eventMessage', 'Player Connected.' + ' Current Players: ' + Object.size(players));
-    io.emit('updateTeams', players);
-    io.emit('setScore');
+  // send the players object to the new player
+  socket.emit("currentPlayers", players);
+  // update all other players of the new player
+  socket.broadcast.emit("newPlayer", players[socket.id]);
+  io.emit(
+    "eventMessage",
+    "Player Connected." + " Current Players: " + Object.size(players)
+  );
+  io.emit("updateTeams", players);
+  io.emit("setScore");
 
-    // Send Vanilla Wordlist
-    socket.emit('wordList', wordList);
+  // Send Vanilla Wordlist
+  socket.emit("wordList", wordList);
 
-    // when a player disconnects, remove them from our players object
-    socket.on('disconnect', function () {
-        console.log('user disconnected');
-        // remove this player from our players object
+  // when a player disconnects, remove them from our players object
+  socket.on("disconnect", function () {
+    console.log("user disconnected");
+    // remove this player from our players object
 
-        // emit a message to all players to remove this player
-        io.emit('userQuit', socket.id);
-        delete players[socket.id];
-        io.emit('eventMessage', 'Player Left.' + ' Current Players: ' + Object.size(players));
-        io.emit('updateTeams', players);
-    });
+    // emit a message to all players to remove this player
+    io.emit("userQuit", socket.id);
+    delete players[socket.id];
+    io.emit(
+      "eventMessage",
+      "Player Left." + " Current Players: " + Object.size(players)
+    );
+    io.emit("updateTeams", players);
+  });
 
-    // when a player moves, update the player data
-    socket.on('playerMovement', function (movementData) {
-        players[socket.id].x = movementData.x;
-        players[socket.id].y = movementData.y;
-        players[socket.id].rotation = movementData.rotation;
-        players[socket.id].direction = movementData.direction;
-        // emit a message to all players about the player that moved
-        socket.broadcast.emit('playerMoved', players[socket.id]);
-    });
+  // when a player moves, update the player data
+  socket.on("playerMovement", function (movementData) {
+    players[socket.id].x = movementData.x;
+    players[socket.id].y = movementData.y;
+    players[socket.id].rotation = movementData.rotation;
+    players[socket.id].direction = movementData.direction;
+    // emit a message to all players about the player that moved
+    socket.broadcast.emit("playerMoved", players[socket.id]);
+  });
 
-    // player joins a team
-    socket.on('joinTeam', function (data) {
-        players[socket.id].team = data;
-        io.emit('updateTeams', players);
-    });
+  // player joins a team
+  socket.on("joinTeam", function (data) {
+    players[socket.id].team = data;
+    io.emit("updateTeams", players);
+  });
 
-    // chat message
-    socket.on('chatMessage', function (data) {
-        io.emit('chatMessage', data, players[socket.id].name);
-    });
-    // event message
-    socket.on('eventMessage', function (data, color) {
-        io.emit('eventMessage', data, color);
-    });
-    // Set Player name
-    socket.on('setPlayerName', function (data) {
-        players[socket.id].name = data;
-        socket.emit('setOverheadName', players[socket.id].name); 
-        socket.broadcast.emit('otherPlayerNameChanged', players[socket.id]);
+  // chat message
+  socket.on("chatMessage", function (data) {
+    io.emit("chatMessage", data, players[socket.id].name);
+  });
+  // event message
+  socket.on("eventMessage", function (data, color) {
+    io.emit("eventMessage", data, color);
+  });
+  // Set Player name
+  socket.on("setPlayerName", function (data) {
+    players[socket.id].name = data;
+    socket.emit("setOverheadName", players[socket.id].name);
+    socket.broadcast.emit("otherPlayerNameChanged", players[socket.id]);
+    io.emit("updateTeams", players);
+  });
+  // server debug
+  socket.on("evalServer", function (data) {
+    if (!DEBUG) return; // kill if not debug mode
+    try {
+      var res = eval(data);
+      socket.emit("evalAnswer", res);
+    } catch (e) {
+      socket.emit("evalAnswer", "Does not exist. Try something else.");
+    }
+  });
+  // word submission
+  socket.on("submitWord", function (data, team) {
 
-        // TODO: setting for clients player only for now
-        // need to io emit to all players & display eventually
-    });
-    // server debug
-    socket.on('evalServer', function (data) {
-        if (!DEBUG) return; // kill if not debug mode
-        try {
-            var res = eval(data);
-            socket.emit('evalAnswer', res);
+    if (team === 'red'){
+        var currentSizeOfRedTeam = sizeOfTeam(socket, 'red');
+    
+        redTeamSubmissionCount++;
+          // we now have red team size
+          if (redTeamSubmissionCount === currentSizeOfRedTeam){
+            console.log('All submissions for the red team are in.');
+            redTeamSubmissionCount = 0;
+            checkSubmission(data, 'red');
+            io.emit("setScore", redTeamScore, blueTeamScore);
+    
         }
-        catch (e) {
-            socket.emit('evalAnswer', 'Does not exist. Try something else.');
+          else{
+              // dont do shit - happens on client
+          }
+    }
+    else{
+        var currentSizeOfBlueTeam = sizeOfTeam(socket, 'blue');
+    
+        blueTeamSubmissionCount++;
+          // we now have red team size
+          if (blueTeamSubmissionCount === currentSizeOfBlueTeam){
+            console.log('All submissions for the blue team are in.');
+            blueTeamSubmissionCount = 0;
+            checkSubmission(data, 'blue');
+            io.emit("setScore", redTeamScore, blueTeamScore);
+    
         }
-    });
-    // word submission
-    socket.on('submitWord', function (data) {
-        if (players[socket.id].team == 'red') console.log('Word: ' + data + '. ' + players[socket.id].name + ' is on red team.');
-        else if (players[socket.id].team == 'blue') console.log('Word ' + data +  '. ' + players[socket.id].name + ' is on blue team.')
-    });
+          else{
+              // dont do shit - happens on client
+          }
+    }
+
+   
+    
+
+  }); // --> submitWord
+
 
 } // --> onConnect
 
 // find the size of an object
 Object.size = function (obj) {
-    var size = 0, key;
-    for (key in obj) {
-        if (obj.hasOwnProperty(key)) size++;
-    }
-    return size;
+  var size = 0,
+    key;
+  for (key in obj) {
+    if (obj.hasOwnProperty(key)) size++;
+  }
+  return size;
 };
 
-// Count all players on blue or red team
-// This will be important when it's time to
-// Determine if everyone made their submission or not
-/*
-Object.keys(players).forEach(function() {
-    if (players[socket.id].team == 'blue') {
-      console.log('blue');
+
+function checkSubmission(data, team){
+
+if (team ==='red'){
+  if('redTeamWord' === checkWordAgainstLists(data)){ 
+      redTeamScore++
+   } // get point / more words?
+  else if('blueTeamWord' === checkWordAgainstLists(data)){
+      blueTeamScore++;
+      // also end turn
+  } 
+  else if('neutralWord' === checkWordAgainstLists(data)){
+    // no score ends turn
+  }  
+  else if('assassinWord' === checkWordAgainstLists(data)){
+       // ends game
     }
-  });
-*/
+} //if 
+else{
+    if('redTeamWord' === checkWordAgainstLists(data)){ 
+        redTeamScore++
+        //also ends turn
+     } 
+    else if('blueTeamWord' === checkWordAgainstLists(data)){
+        blueTeamScore++;
+        // get point / more words?
+    } 
+    else if('neutralWord' === checkWordAgainstLists(data)){
+      // no score ends turn
+    }  
+    else if('assassinWord' === checkWordAgainstLists(data)){
+         // ends game
+      }
+}
+
+} //--> checkSubmission
+
+function checkWordAgainstLists(word) {
+  if (wordBank.redTeamWords.includes(word)) {
+    return "redTeamWord";
+  } else if (wordBank.blueTeamWords.includes(word)) {
+    return "blueTeamWord";
+  } else if (wordBank.neutralWords.includes(word)) {
+    return "neutralWord";
+  } else if (wordBank.assasinWord.includes(word)) {
+    return "AssassinWord";
+  }
+}
+
+function sizeOfTeam(socket, team){
+    var size = 0;
+    Object.keys(players).forEach(function() {
+        if (players[socket.id].team === team) {
+            size++;
+        }
+      });
+      return size;
+}

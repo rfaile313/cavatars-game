@@ -103,8 +103,9 @@ function create() {
   });
 
   this.socket.on("setScore", function (redScore = 0, blueScore = 0) {
+      if(self.player.score) self.player.score.destroy();
     self.player.score = self.add.text(
-      225,
+      205,
       75,
       `Red Team:${redScore}/8                    Score                    Blue Team:${blueScore}/8`,
       {
@@ -268,9 +269,7 @@ function create() {
     const input = document.querySelector("#playerName");
     this.socket.emit(
       "setPlayerName",
-      input.value,
-      self.player.x,
-      self.player.y
+      input.value
     );
     input.value = ""; // Clear text after send
   };
@@ -359,7 +358,8 @@ function create() {
     );
     self.socket.emit(
       "submitWord",
-      self.platforms.labels[this_tile.uniqueID].text
+      self.platforms.labels[this_tile.uniqueID].text,
+      self.player.team
     );
   });
 } // --> create()
