@@ -223,7 +223,7 @@ function checkWordAgainstLists(word) {
   } else if (wordBank.neutralWords.includes(word)) {
     return "neutralWord";
   } else if (wordBank.assasinWord.includes(word)) {
-    return "AssassinWord";
+    return "assassinWord";
   }
 }
 
