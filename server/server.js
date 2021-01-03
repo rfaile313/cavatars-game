@@ -34,6 +34,10 @@ const wordBank = new WordBank();
 
 const wordList = Object.values(wordBank.wordList);
 
+const maxScore = 8;
+
+let currentTeamTurn = Math.floor(Math.random() * Math.floor(2)) ? 'red' : 'blue';
+
 let redTeamScore = 0;
 let blueTeamScore = 0;
 let redTeamSubmissionCount = 0;
@@ -124,6 +128,13 @@ function onConnect(socket) {
       socket.emit("evalAnswer", "Does not exist. Try something else.");
     }
   });
+  // Start new game
+  socket.on("startNewGame", function (data) {
+      // assumes that all players that are going to play are assigned to teams
+      io.emit("eventMessage", `<br>${players[socket.id].name} is starting a new game!<br>`);
+      io.emit("eventMessage", `<br>${currentTeamTurn} goes first!<br>`)
+  });
+
   // word submission
   socket.on("submitWord", function (data, team) {
 
@@ -149,7 +160,7 @@ function onConnect(socket) {
         blueTeamSubmissionCount++;
           // we now have red team size
           if (blueTeamSubmissionCount === currentSizeOfBlueTeam){
-            console.log('All submissions for the blue team are in.');
+            //console.log('All submissions for the blue team are in.');
             blueTeamSubmissionCount = 0;
             checkSubmission(data, 'blue');
             io.emit("setScore", redTeamScore, blueTeamScore);

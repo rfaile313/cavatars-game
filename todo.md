@@ -1,5 +1,6 @@
 - Render client player over text (others are fine)
 - Fix spaces in input box (can't make) --- i think canvas blocks?
+- names getting stuck when chosen?
 
 1. ~~Either decide to create a login screen where you choose a name and team OR have it on screen at all times.~~ I'm leaning towards keeping on screen at all times.
 2. Something to either start the game or determine when a game starts. Thinking about a button on client itself (probably bad idea) or put in the /settings.html screen. 

@@ -155,7 +155,7 @@ function create() {
   this.socket.on("otherPlayerNameChanged", function (playerInfo) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       var name = playerInfo.name;
-      otherPlayer.overheadName.destroy();
+      if (otherPlayer.overheadName) otherPlayer.overheadName.destroy();
       var hexString = assignRandomPhaserColor();
       otherPlayer.overheadName = self.add.text(
         playerInfo.x - 30,
@@ -178,6 +178,8 @@ function create() {
       if (playerInfo.playerId === otherPlayer.playerId) {
         //otherPlayer.setRotation(playerInfo.rotation);
         otherPlayer.setPosition(playerInfo.x, playerInfo.y);
+
+        if (otherPlayer.overheadName !== otherPlayer.name) otherPlayer.overheadName.destroy();
 
         otherPlayer.overheadName.setPosition(
           playerInfo.x - 30,
@@ -320,6 +322,10 @@ function create() {
     removeElements(document.querySelectorAll(".red-team-member"));
   };
 
+  const startNewGame = () => {
+    this.socket.emit("startNewGame");
+  }
+
   // Chat event listener
   document
     .querySelector("#chat-form")
@@ -333,6 +339,9 @@ function create() {
   document
     .getElementById("blueTeamButton")
     .addEventListener("click", joinBlueTeam);
+  document
+    .getElementById("newGame")
+    .addEventListener("click", startNewGame);
   // socket.on dom events
   this.socket.on("chatMessage", chatMessage);
   this.socket.on("evalAnswer", evalAnswer);

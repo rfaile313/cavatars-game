@@ -47,10 +47,6 @@ table{
 /*********************************/
 
 /* Style event messages to be different from chat */
-.event-message{
-color: black;
-font-weight: bold;
-}
 .event-message-red{
 color: red;
 font-weight: bold;
