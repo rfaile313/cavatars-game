@@ -2,6 +2,8 @@
 
 ### Cavatars (Codenames with Avatars!) is a game of guessing which codenames (i.e., words) in a set are related to a hint-word given by another player. See: [Codenames](https://en.wikipedia.org/wiki/Codenames_(board_game))
 
+![gameplay](client/assets/gameplay.gif)
+
 #### Dev:
 
 1. `git clone https://github.com/rfaile313/cavatars-game.git`

@@ -154,6 +154,7 @@ function create() {
 
   this.socket.on("otherPlayerNameChanged", function (playerInfo) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      console.log(self.otherPlayers.getChildren());
       var name = playerInfo.name;
       if (otherPlayer.overheadName) otherPlayer.overheadName.destroy();
       var hexString = assignRandomPhaserColor();
@@ -178,8 +179,6 @@ function create() {
       if (playerInfo.playerId === otherPlayer.playerId) {
         //otherPlayer.setRotation(playerInfo.rotation);
         otherPlayer.setPosition(playerInfo.x, playerInfo.y);
-
-        if (otherPlayer.overheadName !== otherPlayer.name) otherPlayer.overheadName.destroy();
 
         otherPlayer.overheadName.setPosition(
           playerInfo.x - 30,
