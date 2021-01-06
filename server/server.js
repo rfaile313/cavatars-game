@@ -56,6 +56,7 @@ function onConnect(socket) {
     y: 150,
     playerId: socket.id,
     team: "none",
+    spymaster: "no"
   };
 
   // send the players object to the new player
@@ -114,26 +115,42 @@ function onConnect(socket) {
   // Set Player name
   socket.on("setPlayerName", function (data) {
     players[socket.id].name = data;
-    socket.emit("setOverheadName", players[socket.id].name);
-    socket.broadcast.emit("otherPlayerNameChanged", players[socket.id]);
+    socket.emit("updatePlayerName", players[socket.id].name);
+    io.emit("otherPlayerNameChanged", players);
     io.emit("updateTeams", players);
   });
   // server debug
   socket.on("evalServer", function (data) {
-    if (!DEBUG) return; // kill if not debug mode
+    if (!DEBUG){
     try {
       var res = eval(data);
       socket.emit("evalAnswer", res);
     } catch (e) {
       socket.emit("evalAnswer", "Does not exist. Try something else.");
     }
+  }
+  else{
+    Object.keys(players).forEach(function() {
+      // TODO: Might need to make this specific to team 🤔
+      if (players[socket.id].name === data) {
+        players[socket.id].spymaster = "yes";
+        io.emit("showSpymasterBoard", players);
+      }
+    });
+  }
   });
   // Start new game
-  socket.on("startNewGame", function (data) {
+  socket.on("startNewGame", function () {
       // assumes that all players that are going to play are assigned to teams
+      var currentPlayers = Object.size(players);
+      if (currentPlayers < 4 && DEBUG == false){
+      io.emit("eventMessage", `Need at least four Players *on teams* to start a game. <br> Current players: ${currentPlayers}<br>`);
+      }
+      else{
       io.emit("eventMessage", `<br>${players[socket.id].name} is starting a new game!<br>`);
       io.emit("eventMessage", `<br>${currentTeamTurn} goes first!<br>`)
-  });
+      }
+    });
 
   // word submission
   socket.on("submitWord", function (data, team) {
@@ -160,7 +177,7 @@ function onConnect(socket) {
         blueTeamSubmissionCount++;
           // we now have red team size
           if (blueTeamSubmissionCount === currentSizeOfBlueTeam){
-            //console.log('All submissions for the blue team are in.');
+            console.log('All submissions for the blue team are in.');
             blueTeamSubmissionCount = 0;
             checkSubmission(data, 'blue');
             io.emit("setScore", redTeamScore, blueTeamScore);
@@ -171,11 +188,7 @@ function onConnect(socket) {
           }
     }
 
-   
-    
-
   }); // --> submitWord
-
 
 } // --> onConnect
 
@@ -189,9 +202,7 @@ Object.size = function (obj) {
   return size;
 };
 
-
 function checkSubmission(data, team){
-
 if (team ==='red'){
   if('redTeamWord' === checkWordAgainstLists(data)){ 
       redTeamScore++

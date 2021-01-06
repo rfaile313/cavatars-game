@@ -103,7 +103,7 @@ function create() {
   });
 
   this.socket.on("setScore", function (redScore = 0, blueScore = 0) {
-      if(self.player.score) self.player.score.destroy();
+    if (self.player.score) self.player.score.destroy();
     self.player.score = self.add.text(
       205,
       75,
@@ -119,30 +119,6 @@ function create() {
     self.player.score.setScrollFactor(0);
   });
 
-  this.socket.on("setOverheadName", function (name) {
-    // Truncate to 10 char max
-    var truncated = name.slice(0, 10);
-    // clear first if exists
-    if (self.player.overheadName) self.player.overheadName.destroy();
-    // --------------
-    var hexString = assignRandomPhaserColor();
-
-    self.player.name = truncated;
-    self.player.overheadName = self.add.text(
-      GAME_WIDTH / 2 - 20,
-      GAME_HEIGHT / 2 - 40,
-      truncated,
-      {
-        fontFamily: "Arial",
-        fontSize: "16px",
-        fontWeight: "bold",
-        fill: hexString,
-      }
-    );
-    self.player.overheadName.setShadow(1, 1, "black");
-    self.player.overheadName.setScrollFactor(0);
-  });
-
   this.socket.on("userQuit", function (playerId) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerId === otherPlayer.playerId) {
@@ -152,16 +128,14 @@ function create() {
     });
   });
 
-  this.socket.on("otherPlayerNameChanged", function (playerInfo) {
+  this.socket.on("otherPlayerNameChanged", function (players) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
-      console.log(self.otherPlayers.getChildren());
-      var name = playerInfo.name;
-      if (otherPlayer.overheadName) otherPlayer.overheadName.destroy();
+      otherPlayer.overheadName.destroy();
       var hexString = assignRandomPhaserColor();
       otherPlayer.overheadName = self.add.text(
-        playerInfo.x - 30,
-        playerInfo.y - 40,
-        name,
+        otherPlayer.x - 30,
+        otherPlayer.y - 40,
+        players[otherPlayer.playerId].name,
         {
           fontFamily: "Arial",
           fontSize: "16px",
@@ -169,10 +143,28 @@ function create() {
           fill: hexString,
         }
       );
-
       otherPlayer.overheadName.setShadow(1, 1, "black");
     });
   });
+  this.socket.on("updatePlayerName", function(name){
+    var hexString = assignRandomPhaserColor();
+    if(self.player.overheadName) self.player.overheadName.destroy();
+    self.player.overheadName = self.add.text(
+      390,
+      370,
+      name,
+      {
+        fontFamily: "Arial",
+        fontSize: "16px",
+        fontWeight: "bold",
+        fill: hexString,
+      }
+    );
+  
+    self.player.overheadName.setShadow(1, 1, "black");
+    self.player.overheadName.setScrollFactor(0);
+  });
+
 
   this.socket.on("playerMoved", function (playerInfo) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
@@ -195,8 +187,10 @@ function create() {
           otherPlayer.anims.play("down", true);
         } else otherPlayer.anims.play("turn", true);
       }
-    }); // playerMoved
-  }); // ---> create()
+    });
+  }); //playerMoved
+
+  this.socket.on("showSpymasterBoard", function () {});
 
   // TODO: wrap this in a promise in case it takes
   // longer than expected && Ensure it only happens
@@ -268,10 +262,7 @@ function create() {
   const onNameSubmitted = (e) => {
     e.preventDefault();
     const input = document.querySelector("#playerName");
-    this.socket.emit(
-      "setPlayerName",
-      input.value
-    );
+    this.socket.emit("setPlayerName", input.value);
     input.value = ""; // Clear text after send
   };
 
@@ -323,7 +314,7 @@ function create() {
 
   const startNewGame = () => {
     this.socket.emit("startNewGame");
-  }
+  };
 
   // Chat event listener
   document
@@ -338,9 +329,7 @@ function create() {
   document
     .getElementById("blueTeamButton")
     .addEventListener("click", joinBlueTeam);
-  document
-    .getElementById("newGame")
-    .addEventListener("click", startNewGame);
+  document.getElementById("newGame").addEventListener("click", startNewGame);
   // socket.on dom events
   this.socket.on("chatMessage", chatMessage);
   this.socket.on("evalAnswer", evalAnswer);
@@ -348,7 +337,7 @@ function create() {
   this.socket.on("updateTeams", updateTeams);
 
   confirm_button = create_button(self, GAME_WIDTH / 2, 725, "confirm");
-  confirm_button.on("pointerdown", function (pointer) {
+  confirm_button.on("pointerdown", function () {
     var this_tile = self.platforms.getTileAtWorldXY(
       self.player.x,
       self.player.y,
@@ -476,6 +465,7 @@ function addPlayer(self, playerInfo) {
   self.player.setBounce(0.2);
   self.player.name = playerInfo.name;
   self.player.team = playerInfo.team;
+  self.player.playerId = playerInfo.playerId;
 
   // player animations
   self.anims.create({
