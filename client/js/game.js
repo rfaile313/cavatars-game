@@ -24,11 +24,11 @@ var config = {
 // global game variables here
 var last_tile;
 var confirm_button;
-var didOtherPlayerNameChange;
 // labeled tile array
 var unique_tile_id_counter = 0;
 // holds wordList
 var wordList = [];
+var isSpyMaster = false;
 
 const game = new Phaser.Game(config);
 
@@ -146,6 +146,7 @@ function create() {
       otherPlayer.overheadName.setShadow(1, 1, "black");
     });
   });
+
   this.socket.on("updatePlayerName", function(name){
     var hexString = assignRandomPhaserColor();
     if(self.player.overheadName) self.player.overheadName.destroy();
@@ -190,7 +191,59 @@ function create() {
     });
   }); //playerMoved
 
-  this.socket.on("showSpymasterBoard", function () {});
+  this.socket.on("showSpymasterBoard", function (wordBank) {
+    isSpyMaster = true;
+    const redTeamWords = Object.values(wordBank.redTeamWords);
+    const blueTeamWords = Object.values(wordBank.blueTeamWords);
+    const neutralWords = Object.values(wordBank.neutralWords);
+    const assassinWord = Object.values(wordBank.assassinWord);
+    console.log(assassinWord);
+   
+    for (var i = 0; i < self.platforms.labels.length; i++)
+    {
+      // Tint Red Team Words
+      if (redTeamWords.includes(self.platforms.labels[i].text)){
+      var current_tile = self.platforms.getTileAtWorldXY(
+        self.platforms.labels[i].x,
+        self.platforms.labels[i].y,
+        true
+       );
+       current_tile.tint = 0xffcfcf;
+      }
+      // Tint Blue Team Words
+      else if (blueTeamWords.includes(self.platforms.labels[i].text)){
+        var current_tile = self.platforms.getTileAtWorldXY(
+          self.platforms.labels[i].x,
+          self.platforms.labels[i].y,
+          true
+         );
+         current_tile.tint = 0x6BFEFF;
+        }
+        // Tint Assassin Word
+        else if (assassinWord.includes(self.platforms.labels[i].text)){
+          var current_tile = self.platforms.getTileAtWorldXY(
+            self.platforms.labels[i].x,
+            self.platforms.labels[i].y,
+            true
+           );
+           current_tile.tint = 0xFF6BF3;
+          }
+
+          else{
+            // Do nothing, neutral tiles
+          }
+      
+    }
+
+          //if (self.platforms.labels)
+          //self.platforms.layer.data[i][j].tint = 0xffcfcf;
+
+
+      //current_tile.tint = 0xffcfcf; //light red
+      //current_tile.tint = 0x6BFEFF; //light blue
+    
+
+  });
 
   // TODO: wrap this in a promise in case it takes
   // longer than expected && Ensure it only happens
@@ -428,19 +481,21 @@ function update() {
       if (
         current_tile.index == 2 &&
         this.player.team === "red" &&
-        confirm_button.toggle === "on"
+        confirm_button.toggle === "on" &&
+        isSpyMaster == false
       ) {
         current_tile.tint = 0xffcfcf; //light red
         confirm_button.visible = true;
       } else if (
         current_tile.index == 2 &&
         this.player.team === "blue" &&
-        confirm_button.toggle === "on"
+        confirm_button.toggle === "on" &&
+        isSpyMaster == false
       ) {
-        current_tile.tint = 0x85c1e9; //light blue
+        current_tile.tint = 0x6BFEFF; //light blue
         confirm_button.visible = true;
       }
-      if (last_tile && last_tile != current_tile) {
+      if (last_tile && last_tile != current_tile && isSpyMaster == false) {
         last_tile.tint = 0xffffff; //clears
       }
       if (current_tile.index != 2 || confirm_button.toggle != "on") {

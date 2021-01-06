@@ -130,11 +130,12 @@ function onConnect(socket) {
     }
   }
   else{
-    Object.keys(players).forEach(function() {
+    Object.keys(players).forEach(function(player) {
       // TODO: Might need to make this specific to team 🤔
-      if (players[socket.id].name === data) {
-        players[socket.id].spymaster = "yes";
-        io.emit("showSpymasterBoard", players);
+      if (players[player].name === data) {
+        players[player].spymaster = "yes";
+        console.log(players[player].name);
+        io.to(players[player].playerId).emit("showSpymasterBoard", wordBank);
       }
     });
   }
