@@ -42,6 +42,7 @@ let redTeamScore = 0;
 let blueTeamScore = 0;
 let redTeamSubmissionCount = 0;
 let blueTeamSubmissionCount = 0;
+let numOfSpymasters = 0;
 
 // Socket Logic
 io.on("connection", onConnect);
@@ -121,37 +122,51 @@ function onConnect(socket) {
   });
   // server debug
   socket.on("evalServer", function (data) {
-    if (!DEBUG){
-    try {
-      var res = eval(data);
-      socket.emit("evalAnswer", res);
-    } catch (e) {
-      socket.emit("evalAnswer", "Does not exist. Try something else.");
-    }
-  }
-  else{
+  //   if (!DEBUG){
+  //   try {
+  //     var res = eval(data);
+  //     socket.emit("evalAnswer", res);
+  //   } catch (e) {
+  //     socket.emit("evalAnswer", "Does not exist. Try something else.");
+  //   }
+  // }
+  // else{
     Object.keys(players).forEach(function(player) {
       // TODO: Might need to make this specific to team 🤔
       if (players[player].name === data) {
         players[player].spymaster = "yes";
-        console.log(players[player].name);
+        numOfSpymasters++;
+        //console.log(players[player].name);
         io.to(players[player].playerId).emit("showSpymasterBoard", wordBank);
       }
     });
-  }
+  // }
   });
   // Start new game
   socket.on("startNewGame", function () {
       // assumes that all players that are going to play are assigned to teams
       var currentPlayers = Object.size(players);
+      var blueTeamSpymaster;
+      var redTeamSpymaster;
       if (currentPlayers < 4 && DEBUG == false){
       io.emit("eventMessage", `Need at least four Players *on teams* to start a game. <br> Current players: ${currentPlayers}<br>`);
       }
+      else if(numOfSpymasters < 2 && DEBUG == false){
+      io.emit("eventMessage", `Both teams need a Spymaster in order to start the game!`);
+      }
       else{
       io.emit("eventMessage", `<br>${players[socket.id].name} is starting a new game!<br>`);
-      io.emit("eventMessage", `<br>${currentTeamTurn} goes first!<br>`)
-      }
-    });
+      io.emit("eventMessage", `<br>${currentTeamTurn} goes first!<br>`);
+      io.emit("gameStarted", currentTeamTurn);
+    Object.keys(players).forEach(function(player) {
+        if (players[player].spymaster === "yes"){
+          if(players[player].team === "red") redTeamSpymaster = players[player].name;
+          else if (players[player].team === "blue") blueTeamSpymaster = players[player].name
+        }
+      });
+      io.emit("gameStarted", currentTeamTurn, redTeamSpymaster, blueTeamSpymaster);
+    }
+  });
 
   // word submission
   socket.on("submitWord", function (data, team) {

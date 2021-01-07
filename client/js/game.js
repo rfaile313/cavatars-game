@@ -29,20 +29,18 @@ var unique_tile_id_counter = 0;
 // holds wordList
 var wordList = [];
 var isSpyMaster = false;
+var isGameStarted = false;
+var currentTeamTurn = '';
 
 const game = new Phaser.Game(config);
 
 function preload() {
-  //this.load.image('sky', '../assets/sky.png');
-  //this.load.image('space', '../assets/space.png');
-  //this.load.image('ground', '../assets/platform.png');
   this.load.image("tiles", "../assets/576x96-96x96.png");
   this.load.image("confirm", "../assets/button-confirm.png");
   this.load.spritesheet("char_sheet_1", "../assets/future1.png", {
     frameWidth: 26,
     frameHeight: 36,
   });
-  //this.load.bitmapFont('myFont', '../assets/font_0.png', '../assets/font.fnt');
 }
 
 function create() {
@@ -235,14 +233,6 @@ function create() {
       
     }
 
-          //if (self.platforms.labels)
-          //self.platforms.layer.data[i][j].tint = 0xffcfcf;
-
-
-      //current_tile.tint = 0xffcfcf; //light red
-      //current_tile.tint = 0x6BFEFF; //light blue
-    
-
   });
 
   // TODO: wrap this in a promise in case it takes
@@ -278,19 +268,13 @@ function create() {
   // TODO: Once players can choose their own names
   // Prepend 'Player: ' to each message.
   const chatMessage = (text, name) => {
-    /* Writes string to the #events element */
-    // <ul> element
     const parent = document.querySelector("#events");
-    // <li> element
     const el = document.createElement("li");
     el.innerHTML = name + ": " + text;
     parent.appendChild(el);
   };
   const eventMessage = (text, color = "black") => {
-    /* Writes string to the #events element */
-    // <ul> element
     const parent = document.querySelector("#events");
-    // <li> element
     const el = document.createElement("li");
     if (color === "red") el.className = "event-message-red";
     else if (color === "blue") el.className = "event-message-blue";
@@ -368,6 +352,22 @@ function create() {
   const startNewGame = () => {
     this.socket.emit("startNewGame");
   };
+
+  this.socket.on("gameStarted", function(turn, redSpy, blueSpy) {
+    isGameStarted = true;
+    currentTeamTurn = turn;
+    const button = document.getElementById("newGame");
+    button.style="display:none";
+
+    // if this player is spymaster give them a set of buttons to use on their turn
+    if (isSpyMaster){
+      // check team, give buttons
+    }
+    else {
+      // tell players who spymasters are
+    }
+  });
+
 
   // Chat event listener
   document
@@ -482,7 +482,8 @@ function update() {
         current_tile.index == 2 &&
         this.player.team === "red" &&
         confirm_button.toggle === "on" &&
-        isSpyMaster == false
+        !isSpyMaster &&
+        isGameStarted
       ) {
         current_tile.tint = 0xffcfcf; //light red
         confirm_button.visible = true;
@@ -490,7 +491,8 @@ function update() {
         current_tile.index == 2 &&
         this.player.team === "blue" &&
         confirm_button.toggle === "on" &&
-        isSpyMaster == false
+        !isSpyMaster &&
+        isGameStarted
       ) {
         current_tile.tint = 0x6BFEFF; //light blue
         confirm_button.visible = true;
