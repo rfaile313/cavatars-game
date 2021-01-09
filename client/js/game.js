@@ -432,6 +432,9 @@ function create() {
       self.player.team
     );
   });
+
+  
+
 } // --> create()
 
 function update() {
@@ -503,7 +506,7 @@ function update() {
         this.player.team === "red" &&
         confirm_button.toggle === "on" &&
         !isSpyMaster &&
-        isGameStarted
+        isGameStarted 
       ) {
         current_tile.tint = 0xffcfcf; //light red
         confirm_button.visible = true;
@@ -512,7 +515,7 @@ function update() {
         this.player.team === "blue" &&
         confirm_button.toggle === "on" &&
         !isSpyMaster &&
-        isGameStarted
+        isGameStarted //&& 
       ) {
         current_tile.tint = 0x6bfeff; //light blue
         confirm_button.visible = true;
@@ -602,7 +605,10 @@ function addOtherPlayers(self, playerInfo) {
   otherPlayer.name = playerInfo.name;
   otherPlayer.team = playerInfo.team;
 
+  // Destroy if exists
   if (otherPlayer.overheadName) otherPlayer.overheadName.destroy();
+  // Give team color if exists else give random color
+
   var hexString = assignRandomPhaserColor();
   otherPlayer.overheadName = self.add.text(
     playerInfo.x - 30,
