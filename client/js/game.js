@@ -353,6 +353,29 @@ function create() {
     this.socket.emit("startNewGame");
   };
 
+  const showSpymastersToPlayers = (redSpy, blueSpy) => {
+    for (var i = 0; i < 2; i++)
+    {        
+    const parent = document.querySelector("#spymasters");
+    const el = document.createElement("li");
+    if (i == 0) el.innerHTML = `Red Team Spymaster: ${redSpy}`;
+    else el.innerHTML =  `Blue Team Spymaster: ${blueSpy}`;
+    parent.appendChild(el);
+    }
+};
+
+  const createSpyMasterButtons = () => {
+    for (var i = 1; i < 9; i++)
+    {        
+    const parent = document.querySelector("#spymasters");
+    const el = document.createElement("button");
+    if (i == 1) el.innerHTML = `Give team ${i} word`;
+    else el.innerHTML = `Give team ${i} words`;
+    el.id = `word${i}`;
+    parent.appendChild(el);
+    }
+  }
+
   this.socket.on("gameStarted", function(turn, redSpy, blueSpy) {
     isGameStarted = true;
     currentTeamTurn = turn;
@@ -362,9 +385,12 @@ function create() {
     // if this player is spymaster give them a set of buttons to use on their turn
     if (isSpyMaster){
       // check team, give buttons
+      createSpyMasterButtons();
     }
     else {
       // tell players who spymasters are
+      showSpymastersToPlayers(redSpy, blueSpy);
+
     }
   });
 

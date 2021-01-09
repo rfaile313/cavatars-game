@@ -157,7 +157,6 @@ function onConnect(socket) {
       else{
       io.emit("eventMessage", `<br>${players[socket.id].name} is starting a new game!<br>`);
       io.emit("eventMessage", `<br>${currentTeamTurn} goes first!<br>`);
-      io.emit("gameStarted", currentTeamTurn);
     Object.keys(players).forEach(function(player) {
         if (players[player].spymaster === "yes"){
           if(players[player].team === "red") redTeamSpymaster = players[player].name;
