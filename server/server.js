@@ -42,6 +42,9 @@ let redTeamScore = 0;
 let blueTeamScore = 0;
 let redTeamSubmissionCount = 0;
 let blueTeamSubmissionCount = 0;
+let redTeamRoundGuesses = 0;
+let blueTeamRoundGuesses = 0;
+
 let numOfSpymasters = 0;
 
 // Socket Logic
@@ -167,7 +170,22 @@ function onConnect(socket) {
     }
   });
 
-  // word submission
+  // Spymaster submits amount of words to team
+  socket.on('SpymasterSubmitsNumber', function (data){
+    // data is a string: 'wordX' where X is a number from 1-8
+    var rawString = data.slice(4);
+    var number = parseInt(rawString);
+    if (players[socket.id].team == 'red'){
+      redTeamRoundGuesses = number; 
+    }
+    else if (players[socket.id].team == 'blue'){
+      blueTeamRoundGuesses = number;
+    }
+    io.emit('eventMessage', 
+    `Spymaster ${players[socket.id].name} has selected ${number} of words for the ${players[socket.id].team} team to guess.`);
+  });
+
+  // Team word submission
   socket.on("submitWord", function (data, team) {
 
     if (team === 'red'){
@@ -202,10 +220,9 @@ function onConnect(socket) {
               // dont do shit - happens on client
           }
     }
-
   }); // --> submitWord
 
-} // --> onConnect
+} // -----------------> onConnect
 
 // find the size of an object
 Object.size = function (obj) {

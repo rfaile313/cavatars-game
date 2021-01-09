@@ -30,7 +30,7 @@ var unique_tile_id_counter = 0;
 var wordList = [];
 var isSpyMaster = false;
 var isGameStarted = false;
-var currentTeamTurn = '';
+var currentTeamTurn = "";
 
 const game = new Phaser.Game(config);
 
@@ -145,25 +145,19 @@ function create() {
     });
   });
 
-  this.socket.on("updatePlayerName", function(name){
+  this.socket.on("updatePlayerName", function (name) {
     var hexString = assignRandomPhaserColor();
-    if(self.player.overheadName) self.player.overheadName.destroy();
-    self.player.overheadName = self.add.text(
-      390,
-      370,
-      name,
-      {
-        fontFamily: "Arial",
-        fontSize: "16px",
-        fontWeight: "bold",
-        fill: hexString,
-      }
-    );
-  
+    if (self.player.overheadName) self.player.overheadName.destroy();
+    self.player.overheadName = self.add.text(390, 370, name, {
+      fontFamily: "Arial",
+      fontSize: "16px",
+      fontWeight: "bold",
+      fill: hexString,
+    });
+
     self.player.overheadName.setShadow(1, 1, "black");
     self.player.overheadName.setScrollFactor(0);
   });
-
 
   this.socket.on("playerMoved", function (playerInfo) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
@@ -193,46 +187,41 @@ function create() {
     isSpyMaster = true;
     const redTeamWords = Object.values(wordBank.redTeamWords);
     const blueTeamWords = Object.values(wordBank.blueTeamWords);
-    const neutralWords = Object.values(wordBank.neutralWords);
+    //const neutralWords = Object.values(wordBank.neutralWords);
     const assassinWord = Object.values(wordBank.assassinWord);
-    console.log(assassinWord);
-   
-    for (var i = 0; i < self.platforms.labels.length; i++)
-    {
+    //console.log(assassinWord);
+
+    for (var i = 0; i < self.platforms.labels.length; i++) {
       // Tint Red Team Words
-      if (redTeamWords.includes(self.platforms.labels[i].text)){
-      var current_tile = self.platforms.getTileAtWorldXY(
-        self.platforms.labels[i].x,
-        self.platforms.labels[i].y,
-        true
-       );
-       current_tile.tint = 0xffcfcf;
-      }
-      // Tint Blue Team Words
-      else if (blueTeamWords.includes(self.platforms.labels[i].text)){
+      if (redTeamWords.includes(self.platforms.labels[i].text)) {
         var current_tile = self.platforms.getTileAtWorldXY(
           self.platforms.labels[i].x,
           self.platforms.labels[i].y,
           true
-         );
-         current_tile.tint = 0x6BFEFF;
-        }
-        // Tint Assassin Word
-        else if (assassinWord.includes(self.platforms.labels[i].text)){
-          var current_tile = self.platforms.getTileAtWorldXY(
-            self.platforms.labels[i].x,
-            self.platforms.labels[i].y,
-            true
-           );
-           current_tile.tint = 0xFF6BF3;
-          }
-
-          else{
-            // Do nothing, neutral tiles
-          }
-      
+        );
+        current_tile.tint = 0xffcfcf;
+      }
+      // Tint Blue Team Words
+      else if (blueTeamWords.includes(self.platforms.labels[i].text)) {
+        var current_tile = self.platforms.getTileAtWorldXY(
+          self.platforms.labels[i].x,
+          self.platforms.labels[i].y,
+          true
+        );
+        current_tile.tint = 0x6bfeff;
+      }
+      // Tint Assassin Word
+      else if (assassinWord.includes(self.platforms.labels[i].text)) {
+        var current_tile = self.platforms.getTileAtWorldXY(
+          self.platforms.labels[i].x,
+          self.platforms.labels[i].y,
+          true
+        );
+        current_tile.tint = 0xff6bf3;
+      } else {
+        // Do nothing, neutral tiles
+      }
     }
-
   });
 
   // TODO: wrap this in a promise in case it takes
@@ -354,48 +343,53 @@ function create() {
   };
 
   const showSpymastersToPlayers = (redSpy, blueSpy) => {
-    for (var i = 0; i < 2; i++)
-    {        
-    const parent = document.querySelector("#spymasters");
-    const el = document.createElement("li");
-    if (i == 0) el.innerHTML = `Red Team Spymaster: ${redSpy}`;
-    else el.innerHTML =  `Blue Team Spymaster: ${blueSpy}`;
-    parent.appendChild(el);
+    for (var i = 0; i < 2; i++) {
+      const parent = document.querySelector("#spymasters");
+      const el = document.createElement("li");
+      if (i == 0) el.innerHTML = `Red Team Spymaster: ${redSpy}`;
+      else el.innerHTML = `Blue Team Spymaster: ${blueSpy}`;
+      parent.appendChild(el);
     }
-};
+  };
 
   const createSpyMasterButtons = () => {
-    for (var i = 1; i < 9; i++)
-    {        
-    const parent = document.querySelector("#spymasters");
-    const el = document.createElement("button");
-    if (i == 1) el.innerHTML = `Give team ${i} word`;
-    else el.innerHTML = `Give team ${i} words`;
-    el.id = `word${i}`;
-    parent.appendChild(el);
+    for (var i = 1; i < 9; i++) {
+      const parent = document.querySelector("#spymasters");
+      const el = document.createElement("button");
+      if (i == 1) el.innerHTML = `Give team ${i} word`;
+      else el.innerHTML = `Give team ${i} words`;
+      el.id = `word${i}`;
+      parent.appendChild(el);
+      document
+        .getElementById(`word${i}`)
+        .addEventListener("click", spyMasterButtonListeners);
     }
-  }
+  };
 
-  this.socket.on("gameStarted", function(turn, redSpy, blueSpy) {
+  const spyMasterButtonListeners = (e) => {
+    var targetElement = e.target;
+    // only allow if its the current spymaster's turn 
+    if (currentTeamTurn == self.player.team) 
+    this.socket.emit('SpymasterSubmitsNumber', targetElement.id);
+  };
+
+  this.socket.on("gameStarted", function (turn, redSpy, blueSpy) {
     isGameStarted = true;
     currentTeamTurn = turn;
     const button = document.getElementById("newGame");
-    button.style="display:none";
+    button.style = "display:none";
 
     // if this player is spymaster give them a set of buttons to use on their turn
-    if (isSpyMaster){
+    if (isSpyMaster) {
       // check team, give buttons
       createSpyMasterButtons();
-    }
-    else {
+    } else {
       // tell players who spymasters are
       showSpymastersToPlayers(redSpy, blueSpy);
-
     }
   });
 
-
-  // Chat event listener
+  // Dom event listeners
   document
     .querySelector("#chat-form")
     .addEventListener("submit", onChatSubmitted);
@@ -520,7 +514,7 @@ function update() {
         !isSpyMaster &&
         isGameStarted
       ) {
-        current_tile.tint = 0x6BFEFF; //light blue
+        current_tile.tint = 0x6bfeff; //light blue
         confirm_button.visible = true;
       }
       if (last_tile && last_tile != current_tile && isSpyMaster == false) {
