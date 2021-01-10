@@ -1,7 +1,6 @@
+// Ignore undefs, they exist
 /*global Phaser, Phaser*/
-/*eslint no-undef: "error"*/
 /*global io, io*/
-/*eslint no-undef: "error"*/
 
 const DEBUG = true;
 const GAME_WIDTH = 820;
