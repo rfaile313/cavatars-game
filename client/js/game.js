@@ -1,3 +1,8 @@
+/*global Phaser, Phaser*/
+/*eslint no-undef: "error"*/
+/*global io, io*/
+/*eslint no-undef: "error"*/
+
 const DEBUG = true;
 const GAME_WIDTH = 820;
 const GAME_HEIGHT = 820;
@@ -32,7 +37,7 @@ var isSpyMaster = false;
 var isGameStarted = false;
 var currentTeamTurn = "";
 
-const game = new Phaser.Game(config);
+new Phaser.Game(config); // Note(rudy): doesn't need assignment I guess, can just invoke
 
 function preload() {
   this.load.image("tiles", "../assets/576x96-96x96.png");
@@ -190,11 +195,11 @@ function create() {
     //const neutralWords = Object.values(wordBank.neutralWords);
     const assassinWord = Object.values(wordBank.assassinWord);
     //console.log(assassinWord);
-
+    var current_tile;
     for (var i = 0; i < self.platforms.labels.length; i++) {
       // Tint Red Team Words
       if (redTeamWords.includes(self.platforms.labels[i].text)) {
-        var current_tile = self.platforms.getTileAtWorldXY(
+          current_tile = self.platforms.getTileAtWorldXY(
           self.platforms.labels[i].x,
           self.platforms.labels[i].y,
           true
@@ -203,7 +208,7 @@ function create() {
       }
       // Tint Blue Team Words
       else if (blueTeamWords.includes(self.platforms.labels[i].text)) {
-        var current_tile = self.platforms.getTileAtWorldXY(
+          current_tile = self.platforms.getTileAtWorldXY(
           self.platforms.labels[i].x,
           self.platforms.labels[i].y,
           true
@@ -212,7 +217,7 @@ function create() {
       }
       // Tint Assassin Word
       else if (assassinWord.includes(self.platforms.labels[i].text)) {
-        var current_tile = self.platforms.getTileAtWorldXY(
+          current_tile = self.platforms.getTileAtWorldXY(
           self.platforms.labels[i].x,
           self.platforms.labels[i].y,
           true
@@ -323,11 +328,11 @@ function create() {
     });
   };
 
-  const joinRedTeam = (e) => {
+  const joinRedTeam = () => {
     this.player.team = "red";
     this.socket.emit("joinTeam", "red");
   };
-  const joinBlueTeam = (e) => {
+  const joinBlueTeam = () => {
     this.player.team = "blue";
     this.socket.emit("joinTeam", "blue");
   };
@@ -633,10 +638,10 @@ function create_button(self, x, y, source) {
   button = self.add.image(x, y, source).setInteractive();
   button.setScrollFactor(0);
   button.visible = false;
-  button.on("pointerover", function (pointer) {
+  button.on("pointerover", function () {
     button.setScale(1.1);
   });
-  button.on("pointerout", function (pointer) {
+  button.on("pointerout", function () {
     button.setScale(1);
   });
   button.toggle = "on";
@@ -650,6 +655,7 @@ function clone_array(source) {
   //console.log(wordList);
 }
 
+/*eslint no-prototype-builtins: "off"*/
 // find the size of an object
 Object.size = function (obj) {
   var size = 0,
