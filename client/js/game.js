@@ -655,6 +655,8 @@ function clone_array(source) {
   //console.log(wordList);
 }
 
+// Note(rudy): its ok to disable this because
+// object props are hardcoded
 /*eslint no-prototype-builtins: "off"*/
 // find the size of an object
 Object.size = function (obj) {

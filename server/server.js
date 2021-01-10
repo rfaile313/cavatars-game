@@ -33,7 +33,7 @@ var players = {}; // player object list
 const wordBank = new WordBank();
 const wordList = Object.values(wordBank.wordList);
 
-const maxScore = 8;
+// const maxScore = 8;
 
 var currentTeamTurn = Math.floor(Math.random() * Math.floor(2))
   ? "red"
@@ -240,6 +240,7 @@ function onConnect(socket) {
   }); // --> submitWord
 } // -----------------> onConnect
 
+/*eslint no-prototype-builtins: "off"*/
 // find the size of an object
 Object.size = function (obj) {
   var size = 0,
