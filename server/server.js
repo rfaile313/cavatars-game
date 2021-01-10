@@ -31,7 +31,6 @@ server.listen(PORT, () => {
 var players = {}; // player object list
 
 const wordBank = new WordBank();
-
 const wordList = Object.values(wordBank.wordList);
 
 const maxScore = 8;

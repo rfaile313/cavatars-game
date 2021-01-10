@@ -17,6 +17,7 @@
     "socket.io": "^2.3.0"
   },
   "devDependencies": {
+    "eslint": "^7.17.0",
     "nodemon": "^2.0.4"
   }
 }
