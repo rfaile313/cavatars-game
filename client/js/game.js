@@ -235,6 +235,7 @@ function create() {
     // text assignment has to go in the socket function
     // so that it's ready at the same time. i think maybe
     // only way to do it without a promise
+    // console.log("Generated tiles", data);
     for (var i = 0; i < self.platforms.labels.length; i++) {
       self.platforms.labels[i] = self.add.text(
         self.platforms.labels[i].pixelX + 10,
@@ -255,8 +256,6 @@ function create() {
   this.cursors = this.input.keyboard.createCursorKeys();
 
   // Chat client functions
-  // TODO: Once players can choose their own names
-  // Prepend 'Player: ' to each message.
   const chatMessage = (text, name) => {
     const parent = document.querySelector("#events");
     const el = document.createElement("li");
@@ -392,10 +391,10 @@ function create() {
 
   // Dom event listeners
   document
-    .querySelector("#chat-form")
+    .getElementById("chat-form")
     .addEventListener("submit", onChatSubmitted);
   document
-    .querySelector("#name-form")
+    .getElementById("name-form")
     .addEventListener("submit", onNameSubmitted);
   document
     .getElementById("redTeamButton")

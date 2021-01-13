@@ -77,7 +77,6 @@ function onConnect(socket) {
   );
   io.emit("updateTeams", players);
   io.emit("setScore");
-
   // Send Vanilla Wordlist
   socket.emit("wordList", wordList);
 
