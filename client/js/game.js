@@ -34,17 +34,14 @@ var unique_tile_id_counter = 0;
 var wordList = [];
 var isSpyMaster = false;
 var isGameStarted = false;
-var currentTeamTurn = "";
+var currentTeamTurn;
 
 new Phaser.Game(config); // Note(rudy): doesn't need assignment I guess, can just invoke
 
 function preload() {
   this.load.image("tiles", "../assets/576x96-96x96.png");
   this.load.image("confirm", "../assets/button-confirm.png");
-  this.load.spritesheet("char_sheet_1", "../assets/future1.png", {
-    frameWidth: 26,
-    frameHeight: 36,
-  });
+  this.load.spritesheet("char_sheet_1", "../assets/char_sheet_1.png", { frameWidth: 26, frameHeight: 36 });
 }
 
 function create() {
@@ -198,7 +195,7 @@ function create() {
     for (var i = 0; i < self.platforms.labels.length; i++) {
       // Tint Red Team Words
       if (redTeamWords.includes(self.platforms.labels[i].text)) {
-          current_tile = self.platforms.getTileAtWorldXY(
+        current_tile = self.platforms.getTileAtWorldXY(
           self.platforms.labels[i].x,
           self.platforms.labels[i].y,
           true
@@ -207,7 +204,7 @@ function create() {
       }
       // Tint Blue Team Words
       else if (blueTeamWords.includes(self.platforms.labels[i].text)) {
-          current_tile = self.platforms.getTileAtWorldXY(
+        current_tile = self.platforms.getTileAtWorldXY(
           self.platforms.labels[i].x,
           self.platforms.labels[i].y,
           true
@@ -216,7 +213,7 @@ function create() {
       }
       // Tint Assassin Word
       else if (assassinWord.includes(self.platforms.labels[i].text)) {
-          current_tile = self.platforms.getTileAtWorldXY(
+        current_tile = self.platforms.getTileAtWorldXY(
           self.platforms.labels[i].x,
           self.platforms.labels[i].y,
           true
@@ -372,9 +369,9 @@ function create() {
 
   const spyMasterButtonListeners = (e) => {
     var targetElement = e.target;
-    // only allow if its the current spymaster's turn 
-    if (currentTeamTurn == self.player.team) 
-    this.socket.emit('SpymasterSubmitsNumber', targetElement.id);
+    // only allow if its the current spymaster's turn
+    if (currentTeamTurn == self.player.team)
+      this.socket.emit("SpymasterSubmitsNumber", targetElement.id);
   };
 
   this.socket.on("gameStarted", function (turn, redSpy, blueSpy) {
@@ -436,9 +433,6 @@ function create() {
       self.player.team
     );
   });
-
-  
-
 } // --> create()
 
 function update() {
@@ -510,7 +504,7 @@ function update() {
         this.player.team === "red" &&
         confirm_button.toggle === "on" &&
         !isSpyMaster &&
-        isGameStarted 
+        isGameStarted
       ) {
         current_tile.tint = 0xffcfcf; //light red
         confirm_button.visible = true;
@@ -519,7 +513,7 @@ function update() {
         this.player.team === "blue" &&
         confirm_button.toggle === "on" &&
         !isSpyMaster &&
-        isGameStarted //&& 
+        isGameStarted //&&
       ) {
         current_tile.tint = 0x6bfeff; //light blue
         confirm_button.visible = true;
@@ -546,7 +540,7 @@ function addPlayer(self, playerInfo) {
   );
   self.player.body.setSize(25, 33, true);
   //self.player.body.offset.y = 38;
-  self.player.setBounce(0.2);
+  //self.player.setBounce(0.2);
   self.player.name = playerInfo.name;
   self.player.team = playerInfo.team;
   self.player.playerId = playerInfo.playerId;
