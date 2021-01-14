@@ -252,6 +252,11 @@ function create() {
     }
   });
 
+  this.socket.on("tintTile", function(tile, color){
+    var tile_to_tint = tile;
+    tile_to_tint.tint = color;
+  });
+
   // Bind keys
   this.cursors = this.input.keyboard.createCursorKeys();
 
@@ -411,13 +416,20 @@ function create() {
 
   confirm_button = create_button(self, GAME_WIDTH / 2, 725, "confirm");
   confirm_button.on("pointerdown", function () {
+    
     var this_tile = self.platforms.getTileAtWorldXY(
       self.player.x,
       self.player.y,
       true
     );
-    //console.log(self.platforms.labels[this_tile.uniqueID].text);
     confirm_button.toggle = "off";
+
+    self.socket.emit(
+      "submitWord",
+      self.platforms.labels[this_tile.uniqueID].text,
+      self.player.team
+    );
+
     self.socket.emit(
       "eventMessage",
       self.player.name +
@@ -426,11 +438,7 @@ function create() {
         " !",
       self.player.team
     );
-    self.socket.emit(
-      "submitWord",
-      self.platforms.labels[this_tile.uniqueID].text,
-      self.player.team
-    );
+
   });
 } // --> create()
 

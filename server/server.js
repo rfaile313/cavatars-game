@@ -252,6 +252,7 @@ Object.size = function (obj) {
 
 function checkSubmission(data, team) {
   if (team === "red") {
+    io.emit("tintTile", tile, 'red');
     if ("redTeamWord" === checkWordAgainstLists(data)) {
       io.emit(
         "eventMessage",
@@ -296,10 +297,12 @@ function checkSubmission(data, team) {
   } // red team
   else {
     if ("redTeamWord" === checkWordAgainstLists(data)) {
+
       io.emit(
         "eventMessage",
         `${data} is NOT a blue team word.... and what's worse, it's a Red Team word... so Red team gets a point! <br> Also, Blue Team's turn is over!`
       );
+ 
       redTeamScore++;
       //also ends turn
       currentTeamTurn = 'red';
@@ -314,7 +317,7 @@ function checkSubmission(data, team) {
         currentGuesses++;
         io.emit(
           "eventMessage",
-          `Blue team goes again! Words remaining this round: ${redTeamRoundGuesses - currentGuesses}`
+          `Blue team goes again! Words remaining this round: ${blueTeamRoundGuesses - currentGuesses}`
         );
       }
       // get point / more words?
