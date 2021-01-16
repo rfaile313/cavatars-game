@@ -251,8 +251,8 @@ Object.size = function (obj) {
 };
 
 function checkSubmission(data, team) {
+  // TODO: Refactor this - this is terribad.
   if (team === "red") {
-    io.emit("tintTile", tile, 'red');
     if ("redTeamWord" === checkWordAgainstLists(data)) {
       io.emit(
         "eventMessage",

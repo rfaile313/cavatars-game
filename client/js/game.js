@@ -28,20 +28,29 @@ var config = {
 // global game variables here
 var last_tile;
 var confirm_button;
-// labeled tile array
-var unique_tile_id_counter = 0;
-// holds wordList
-var wordList = [];
+var unique_tile_id_counter = 0; // labeled tile array
+var wordList = [];  // holds vanilla wordList on client side
 var isSpyMaster = false;
 var isGameStarted = false;
 var currentTeamTurn;
 
-new Phaser.Game(config); // Note(rudy): doesn't need assignment I guess, can just invoke
+const game = new Phaser.Game(config);
 
 function preload() {
   this.load.image("tiles", "../assets/576x96-96x96.png");
   this.load.image("confirm", "../assets/button-confirm.png");
-  this.load.spritesheet("char_sheet_1", "../assets/char_sheet_1.png", { frameWidth: 26, frameHeight: 36 });
+  this.load.image("new_game", "../assets/new_game.png");
+  this.load.image("game_over", "../assets/game_over.png");
+  this.load.image("red_team_point", "../assets/red_team_point.png");
+  this.load.image("blue_team_point", "../assets/blue_team_point.png");
+  this.load.image("red_team_wins", "../assets/red_team_wins.png");
+  this.load.image("blue_team_wins", "../assets/blue_team_wins.png");
+  this.load.image("assassin_word", "../assets/assassin_word.png");
+
+  this.load.spritesheet("char_sheet_1", "../assets/char_sheet_1.png", {
+    frameWidth: 26,
+    frameHeight: 36,
+  });
 }
 
 function create() {
@@ -50,7 +59,7 @@ function create() {
   // to self in order to use it in a nested function
   var self = this;
   this.socket = io();
-
+  // Camera setup w/slight zoom
   this.cameras.main.setViewport(0, 0, 820, 820).setZoom(1.2); //.setZoom(1.5)
 
   const level = [
@@ -252,13 +261,17 @@ function create() {
     }
   });
 
-  this.socket.on("tintTile", function(tile, color){
+  this.socket.on("tintTile", function (tile, color) {
     var tile_to_tint = tile;
     tile_to_tint.tint = color;
   });
 
   // Bind keys
   this.cursors = this.input.keyboard.createCursorKeys();
+  // turn off phaser input listener if chat is focused to enable spaces (props martins for the help)
+  const chatBox = document.getElementById("chat");
+  chatBox.addEventListener("focus", () => { this.input.keyboard.disableGlobalCapture() });
+  chatBox.addEventListener("blur", () =>  { this.input.keyboard.enableGlobalCapture()  });
 
   // Chat client functions
   const chatMessage = (text, name) => {
@@ -408,27 +421,21 @@ function create() {
     .getElementById("blueTeamButton")
     .addEventListener("click", joinBlueTeam);
   document.getElementById("newGame").addEventListener("click", startNewGame);
+
   // socket.on dom events
   this.socket.on("chatMessage", chatMessage);
   this.socket.on("evalAnswer", evalAnswer);
   this.socket.on("eventMessage", eventMessage);
   this.socket.on("updateTeams", updateTeams);
-
+  // Button events
   confirm_button = create_button(self, GAME_WIDTH / 2, 725, "confirm");
   confirm_button.on("pointerdown", function () {
-    
     var this_tile = self.platforms.getTileAtWorldXY(
       self.player.x,
       self.player.y,
       true
     );
     confirm_button.toggle = "off";
-
-    self.socket.emit(
-      "submitWord",
-      self.platforms.labels[this_tile.uniqueID].text,
-      self.player.team
-    );
 
     self.socket.emit(
       "eventMessage",
@@ -439,6 +446,12 @@ function create() {
       self.player.team
     );
 
+    self.socket.emit(
+      "submitWord",
+      self.platforms.labels[this_tile.uniqueID].text,
+      self.player.team
+    );
+    
   });
 } // --> create()
 
@@ -536,6 +549,7 @@ function update() {
       // Do nothing if no index and world wrap will catch
     }
   } // --> player movement + tile + emit
+
 } // --> update()
 
 function addPlayer(self, playerInfo) {
@@ -715,3 +729,4 @@ function assignRandomPhaserColor() {
 //    tr.appendChild(td);
 //    parent.appendChild(tr);
 //   }
+
