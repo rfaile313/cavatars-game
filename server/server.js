@@ -8,7 +8,7 @@ const helmet = require("helmet");
 const WordBank = require("./wordbank");
 // Server Setup
 const app = express();
-const PORT = 8000;
+const PORT = 9999;
 const DEBUG = true;
 
 // Only allow index.html on / or /settings
