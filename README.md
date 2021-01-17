@@ -13,4 +13,4 @@
 2. `cd cavatars-game`
 3. `npm install`
 4. `npm run dev`
-5. Navigate in browser to http://localhost:8000/
+5. Navigate in browser to http://localhost:9999/
