@@ -2,6 +2,7 @@
 
 ### Cavatars (Codenames with Avatars!) is a fully functioning multiplayer game playable in a web browser. It is programmed in JavaScript using NodeJS, Socket.io, and Phaser3.
 
+#### Gameplay Video Example:
 [![Cavatars Gameplay Video](client/assets/cavatars.png)](https://youtu.be/jKvKLSwcUII)
 
 #### Codenames is a game of guessing which codenames (i.e. words) in a set are related to a hint-word given by another player. See: [Codenames](https://en.wikipedia.org/wiki/Codenames_(board_game))
