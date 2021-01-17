@@ -29,7 +29,7 @@ var config = {
 var last_tile;
 var confirm_button;
 var unique_tile_id_counter = 0; // labeled tile array
-var wordList = [];  // holds vanilla wordList on client side
+var wordList = []; // holds vanilla wordList on client side
 var isSpyMaster = false;
 var isGameStarted = false;
 var currentTeamTurn;
@@ -41,6 +41,7 @@ function preload() {
   this.load.image("confirm", "../assets/button-confirm.png");
   this.load.image("new_game", "../assets/new_game.png");
   this.load.image("game_over", "../assets/game_over.png");
+  this.load.image("switch_team_turns", "../assets/switch_team_turns.png");
   this.load.image("red_team_point", "../assets/red_team_point.png");
   this.load.image("blue_team_point", "../assets/blue_team_point.png");
   this.load.image("red_team_wins", "../assets/red_team_wins.png");
@@ -209,7 +210,7 @@ function create() {
           self.platforms.labels[i].y,
           true
         );
-        current_tile.tint = 0xffcfcf;
+        current_tile.tint = 0xff4343; // light red
       }
       // Tint Blue Team Words
       else if (blueTeamWords.includes(self.platforms.labels[i].text)) {
@@ -218,7 +219,7 @@ function create() {
           self.platforms.labels[i].y,
           true
         );
-        current_tile.tint = 0x6bfeff;
+        current_tile.tint = 0x50b9ff; // light blue
       }
       // Tint Assassin Word
       else if (assassinWord.includes(self.platforms.labels[i].text)) {
@@ -227,7 +228,7 @@ function create() {
           self.platforms.labels[i].y,
           true
         );
-        current_tile.tint = 0xff6bf3;
+        current_tile.tint = 0x828282; // gray
       } else {
         // Do nothing, neutral tiles
       }
@@ -261,17 +262,24 @@ function create() {
     }
   });
 
-  this.socket.on("tintTile", function (tile, color) {
-    var tile_to_tint = tile;
-    tile_to_tint.tint = color;
+  this.socket.on("tintTile", function (x, y, color) {
+    if (!isSpyMaster) {
+      // dont need to do shit if player is spymaster
+      var tile_to_tint = self.platforms.getTileAtWorldXY(x, y, true);
+      tile_to_tint.tint = color;
+    }
   });
 
   // Bind keys
   this.cursors = this.input.keyboard.createCursorKeys();
   // turn off phaser input listener if chat is focused to enable spaces (props martins for the help)
   const chatBox = document.getElementById("chat");
-  chatBox.addEventListener("focus", () => { this.input.keyboard.disableGlobalCapture() });
-  chatBox.addEventListener("blur", () =>  { this.input.keyboard.enableGlobalCapture()  });
+  chatBox.addEventListener("focus", () => {
+    this.input.keyboard.disableGlobalCapture();
+  });
+  chatBox.addEventListener("blur", () => {
+    this.input.keyboard.enableGlobalCapture();
+  });
 
   // Chat client functions
   const chatMessage = (text, name) => {
@@ -305,9 +313,11 @@ function create() {
 
   const onNameSubmitted = (e) => {
     e.preventDefault();
-    const input = document.querySelector("#playerName");
+    const input = document.getElementById("playerName");
+    const nameForm = document.getElementById("name-form");
     this.socket.emit("setPlayerName", input.value);
     input.value = ""; // Clear text after send
+    nameForm.style = "display:none";
   };
 
   const updateTeams = (players) => {
@@ -382,13 +392,30 @@ function create() {
         .getElementById(`word${i}`)
         .addEventListener("click", spyMasterButtonListeners);
     }
+    spyMasterButtonsVisible();
+  };
+
+  const spyMasterButtonsVisible = () => {
+    // spymaster buttons
+    const buttons = document.getElementById("spymaster-container");
+    if (currentTeamTurn === this.player.team && isSpyMaster)
+      buttons.style = "visibility: visible;";
+    else buttons.style = "visibility: hidden;";
+  };
+
+  const playerConfirmButtonsVisible = () => {
+    // only show buttons if its the current players's turn
+    if (isSpyMaster) confirm_button.visible = false;
+    else if (currentTeamTurn === this.player.team)
+      confirm_button.visible = true;
+    else confirm_button.visible = false;
   };
 
   const spyMasterButtonListeners = (e) => {
     var targetElement = e.target;
-    // only allow if its the current spymaster's turn
-    if (currentTeamTurn == self.player.team)
-      this.socket.emit("SpymasterSubmitsNumber", targetElement.id);
+    this.socket.emit("SpymasterSubmitsNumber", targetElement.id);
+    const buttons = document.getElementById("spymaster-container");
+    buttons.style = "visibility: hidden;";
   };
 
   this.socket.on("gameStarted", function (turn, redSpy, blueSpy) {
@@ -396,7 +423,7 @@ function create() {
     currentTeamTurn = turn;
     const button = document.getElementById("newGame");
     button.style = "display:none";
-
+    createAndFlashImage(self, 410, 250, "new_game", 12);
     // if this player is spymaster give them a set of buttons to use on their turn
     if (isSpyMaster) {
       // check team, give buttons
@@ -405,6 +432,25 @@ function create() {
       // tell players who spymasters are
       showSpymastersToPlayers(redSpy, blueSpy);
     }
+    // no longer can change teams, new players cant join team of a game in progress
+    document
+      .getElementById("redTeamButton")
+      .removeEventListener("click", joinRedTeam);
+    document
+      .getElementById("blueTeamButton")
+      .removeEventListener("click", joinBlueTeam);
+  });
+
+  this.socket.on("changeTeamTurn", function (team) {
+    currentTeamTurn = team;
+    createAndFlashImage(self, 410, 200, "switch_team_turns", 20);
+    playerConfirmButtonsVisible();
+    spyMasterButtonsVisible();
+  });
+
+  this.socket.on("flashImage", function (x, y, image, repeat) {
+    //createAndFlashImage(self, 410, 300, "red_team_wins", 12);
+    createAndFlashImage(self, x, y, image, repeat);
   });
 
   // Dom event listeners
@@ -422,37 +468,44 @@ function create() {
     .addEventListener("click", joinBlueTeam);
   document.getElementById("newGame").addEventListener("click", startNewGame);
 
+  this.socket.on("showConfirmButton", playerConfirmButtonsVisible);
+
   // socket.on dom events
   this.socket.on("chatMessage", chatMessage);
   this.socket.on("evalAnswer", evalAnswer);
   this.socket.on("eventMessage", eventMessage);
   this.socket.on("updateTeams", updateTeams);
   // Button events
-  confirm_button = create_button(self, GAME_WIDTH / 2, 725, "confirm");
+  confirm_button = create_button(self, GAME_WIDTH / 2, 550, "confirm");
   confirm_button.on("pointerdown", function () {
     var this_tile = self.platforms.getTileAtWorldXY(
       self.player.x,
       self.player.y,
       true
     );
-    confirm_button.toggle = "off";
+    if (this_tile.index == 2 && !this_tile.alreadySelected) {
+      //needs to be a submittable tile
+      self.socket.emit(
+        "eventMessage",
+        self.player.name +
+          " confirmed the word " +
+          self.platforms.labels[this_tile.uniqueID].text +
+          " !",
+        self.player.team
+      );
 
-    self.socket.emit(
-      "eventMessage",
-      self.player.name +
-        " confirmed the word " +
-        self.platforms.labels[this_tile.uniqueID].text +
-        " !",
-      self.player.team
-    );
-
-    self.socket.emit(
-      "submitWord",
-      self.platforms.labels[this_tile.uniqueID].text,
-      self.player.team
-    );
-    
+      self.socket.emit(
+        "submitWord",
+        self.platforms.labels[this_tile.uniqueID].text,
+        self.player.team,
+        self.player.x,
+        self.player.y
+      );
+      this_tile.alreadySelected = true;
+    }
   });
+  // Image testing -- needs to be even num so last flash is not visible
+  //createAndFlashImage(self, 410, 300, "red_team_wins", 12);
 } // --> create()
 
 function update() {
@@ -521,39 +574,34 @@ function update() {
       // wrap in try in case player tries to go off map
       if (
         current_tile.index == 2 &&
+        !current_tile.alreadySelected &&
         this.player.team === "red" &&
-        confirm_button.toggle === "on" &&
         !isSpyMaster &&
         isGameStarted
       ) {
-        current_tile.tint = 0xffcfcf; //light red
-        confirm_button.visible = true;
+        current_tile.tint = 0xff4343; //light red
       } else if (
         current_tile.index == 2 &&
+        !current_tile.alreadySelected &&
         this.player.team === "blue" &&
-        confirm_button.toggle === "on" &&
         !isSpyMaster &&
         isGameStarted //&&
       ) {
-        current_tile.tint = 0x6bfeff; //light blue
-        confirm_button.visible = true;
+        current_tile.tint = 0x50b9ff; //light blue
       }
-      if (last_tile && last_tile != current_tile && isSpyMaster == false) {
+      if (last_tile && last_tile != current_tile && !isSpyMaster && !current_tile.alreadySelected) {
         last_tile.tint = 0xffffff; //clears
       }
-      if (current_tile.index != 2 || confirm_button.toggle != "on") {
-        confirm_button.visible = false;
-      }
+
       last_tile = current_tile;
     } catch (e) {
       // Do nothing if no index and world wrap will catch
     }
   } // --> player movement + tile + emit
-
 } // --> update()
 
 function addPlayer(self, playerInfo) {
-  console.log("adding player");
+  //console.log("adding player");
   self.player = self.physics.add.sprite(
     playerInfo.x,
     playerInfo.y,
@@ -615,7 +663,7 @@ function addPlayer(self, playerInfo) {
 }
 
 function addOtherPlayers(self, playerInfo) {
-  console.log("adding another player");
+  //console.log("adding another player");
   var otherPlayer = self.add
     .sprite(playerInfo.x, playerInfo.y, "char_sheet_1")
     .setSize(25, 33, true);
@@ -658,7 +706,6 @@ function create_button(self, x, y, source) {
   button.on("pointerout", function () {
     button.setScale(1);
   });
-  button.toggle = "on";
   return button;
 }
 
@@ -670,7 +717,7 @@ function clone_array(source) {
 }
 
 // Note(rudy): its ok to disable this because
-// object props are hardcoded
+// object props are hardcoded... i think its ok anyway :)
 /*eslint no-prototype-builtins: "off"*/
 // find the size of an object
 Object.size = function (obj) {
@@ -694,6 +741,21 @@ function assignRandomPhaserColor() {
   return convertColor;
 }
 
+function createAndFlashImage(self, x, y, image, repeat) {
+  // creates an image and flashes it 4 times
+  var this_image = self.add.image(x, y, image);
+  this_image.setScrollFactor(0);
+  self.time.addEvent({
+    delay: 300,
+    callback: flash,
+    callbackScope: this,
+    repeat: repeat,
+  }); // repeat should be even to be not visible @ end
+  function flash() {
+    this_image.visible = !this_image.visible;
+  }
+}
+
 // Debugging
 
 // player object
@@ -703,30 +765,7 @@ function assignRandomPhaserColor() {
 
 // GRAVEYARD
 
-/* bitmap text
-    for (var i = 0; i < tileLabels.length; i++) {
-    tileLabels[i] = this.add.bitmapText(
-        tileLabels[i].pixelX + 10,
-        tileLabels[i].pixelY + 30,
-
-        
-        // for now just get locally to test
-        'myFont',
-        code1[i]
-        
-    );
-}
-*/
-
-//    var players = ['jake', 'john', 'paul'];
-
-//    for (let i=0; i < players.length; i++) {
-//    let parent = document.querySelector('#blueTeamTable');
-//    let tr = document.createElement('tr');
-//    let td = document.createElement('td');
-//    td.innerHTML = players[i];
-//    tr.className="blue-team-member";
-//    tr.appendChild(td);
-//    parent.appendChild(tr);
-//   }
-
+//light red
+// 0xff4343
+//light blue
+// 0x50b9ff

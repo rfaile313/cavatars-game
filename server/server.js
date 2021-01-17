@@ -33,7 +33,7 @@ var players = {}; // player object list
 const wordBank = new WordBank();
 const wordList = Object.values(wordBank.wordList);
 
-// const maxScore = 8;
+const maxScore = 8;
 
 var currentTeamTurn = Math.floor(Math.random() * Math.floor(2))
   ? "red"
@@ -205,33 +205,38 @@ function onConnect(socket) {
         players[socket.id].team
       } team to guess.`
     );
-    //io.emit('giveConfirmButton', players[socket.id].team);
+    io.emit("showConfirmButton");
   });
 
   // Team word submission
-  socket.on("submitWord", function (data, team) {
-    console.log(data, team);
+  socket.on("submitWord", function (data, team, tile_x, tile_y) {
+    // TODO: need to figure out something if all players don't pick the same word :/
+    //console.log(data, team);
     if (team === "red") {
       var currentSizeOfRedTeam = sizeOfTeam("red");
-      console.log(currentSizeOfRedTeam);
+      //console.log(currentSizeOfRedTeam);
       redTeamSubmissionCount++;
-      if (redTeamSubmissionCount === currentSizeOfRedTeam - 1 ) { // less 1 bc of the spymaster
+      if (redTeamSubmissionCount === currentSizeOfRedTeam - 1) {
+        // less 1 bc of the spymaster
         console.log("All submissions for the red team are in.");
         redTeamSubmissionCount = 0;
-        checkSubmission(data, "red");
+        checkSubmission(data, "red", tile_x, tile_y);
         io.emit("setScore", redTeamScore, blueTeamScore);
+        io.emit("resetConfirmButton");
       } else {
         // dont do shit - happens on client
       }
     } else {
       var currentSizeOfBlueTeam = sizeOfTeam("blue");
-      console.log(currentSizeOfBlueTeam);
+      //console.log(currentSizeOfBlueTeam);
       blueTeamSubmissionCount++;
-      if (blueTeamSubmissionCount === currentSizeOfBlueTeam - 1) { // less 1 bc of the spymaster
+      if (blueTeamSubmissionCount === currentSizeOfBlueTeam - 1) {
+        // less 1 bc of the spymaster
         console.log("All submissions for the blue team are in.");
         blueTeamSubmissionCount = 0;
-        checkSubmission(data, "blue");
+        checkSubmission(data, "blue", tile_x, tile_y);
         io.emit("setScore", redTeamScore, blueTeamScore);
+        io.emit("resetConfirmButton");
       } else {
         // dont do shit - happens on client
       }
@@ -250,7 +255,7 @@ Object.size = function (obj) {
   return size;
 };
 
-function checkSubmission(data, team) {
+function checkSubmission(data, team, x, y) {
   // TODO: Refactor this - this is terribad.
   if (team === "red") {
     if ("redTeamWord" === checkWordAgainstLists(data)) {
@@ -259,53 +264,64 @@ function checkSubmission(data, team) {
         `${data} is indeed a Red team word! Red team gets a point!`
       );
       redTeamScore++;
-      if (currentGuesses < redTeamRoundGuesses){
-        currentGuesses++;
+      io.emit("flashImage", 410, 300, "red_team_point", 6);
+      io.emit("tintTile", x, y, 0xff4343); //light red
+      if (redTeamScore === maxScore) {
+        // game over, red wins
+      }
+      currentGuesses++;
+      if (redTeamRoundGuesses - currentGuesses !== 0) {
         io.emit(
           "eventMessage",
-          `Red team goes again! Words remaining this round: ${redTeamRoundGuesses - currentGuesses}`
+          `Red team goes again! Words remaining this round: ${
+            redTeamRoundGuesses - currentGuesses
+          }`
         );
-      }
-      else {
+      } else {
         io.emit(
           "eventMessage",
           `Red Team has guessed all of the words their Spymaster has assigned the team. Well done! It is now Blue Team's turn.`
         );
         currentGuesses = 0;
-        currentTeamTurn = 'blue';
+        currentTeamTurn = "blue";
+        io.emit("changeTeamTurn", currentTeamTurn);
       }
-    }
-    else if ("blueTeamWord" === checkWordAgainstLists(data)) {
+    } else if ("blueTeamWord" === checkWordAgainstLists(data)) {
       io.emit(
         "eventMessage",
         `${data} is NOT a Red team word.... and what's worse, it's a Blue Team word... so Blue team gets a point! <br> Also, Red Team's turn is over!`
       );
       blueTeamScore++;
+      io.emit("tintTile", x, y, 0x50b9ff); // light blue
       // also end turn
       currentGuesses = 0;
-      currentTeamTurn = 'blue';
+      currentTeamTurn = "blue";
+      io.emit("changeTeamTurn", currentTeamTurn);
     } else if ("neutralWord" === checkWordAgainstLists(data)) {
       io.emit(
         "eventMessage",
         `Unfortunately ${data} was an innocent bystander. You don't lose any points, but your team's turn is over.`
       );
-      currentTeamTurn = 'blue';
+      currentTeamTurn = "blue";
+      io.emit("changeTeamTurn", currentTeamTurn);
       // no score ends turn
     } else if ("assassinWord" === checkWordAgainstLists(data)) {
+      io.emit("flashImage", 410, 300, "blue_team_wins", 12);
       // ends game
     }
-  } // red team
+  } // ---> red team
   else {
+    // blue team
     if ("redTeamWord" === checkWordAgainstLists(data)) {
-
       io.emit(
         "eventMessage",
         `${data} is NOT a blue team word.... and what's worse, it's a Red Team word... so Red team gets a point! <br> Also, Blue Team's turn is over!`
       );
- 
+      io.emit("tintTile", x, y, 0xff4343); //light red
       redTeamScore++;
       //also ends turn
-      currentTeamTurn = 'red';
+      currentTeamTurn = "red";
+      io.emit("changeTeamTurn", currentTeamTurn);
       currentGuesses = 0;
     } else if ("blueTeamWord" === checkWordAgainstLists(data)) {
       io.emit(
@@ -313,26 +329,41 @@ function checkSubmission(data, team) {
         `${data} is indeed a Blue team word! Blue team gets a point!`
       );
       blueTeamScore++;
-      if (currentGuesses < blueTeamRoundGuesses){
-        currentGuesses++;
+      io.emit("flashImage", 410, 300, "blue_team_point", 6);
+      io.emit("tintTile", x, y, 0x50b9ff); // light blue
+      if (blueTeamScore === maxScore) {
+        // game over, blue wins
+      }
+      currentGuesses++;
+      if (blueTeamRoundGuesses - currentGuesses !== 0) {
         io.emit(
           "eventMessage",
-          `Blue team goes again! Words remaining this round: ${blueTeamRoundGuesses - currentGuesses}`
+          `Blue team goes again! Words remaining this round: ${
+            blueTeamRoundGuesses - currentGuesses
+          }`
         );
+      } else {
+        io.emit(
+          "eventMessage",
+          `Blue Team has guessed all of the words their Spymaster has assigned the team. Well done! It is now Red Team's turn.`
+        );
+        currentGuesses = 0;
+        currentTeamTurn = "red";
+        io.emit("changeTeamTurn", currentTeamTurn);
       }
-      // get point / more words?
     } else if ("neutralWord" === checkWordAgainstLists(data)) {
       io.emit(
         "eventMessage",
         `Unfortunately ${data} was an innocent bystander. You don't lose any points, but your team's turn is over.`
       );
-      currentTeamTurn = 'red';
+      currentTeamTurn = "red";
       currentGuesses = 0;
+      io.emit("changeTeamTurn", currentTeamTurn);
       // no score ends turn
     } else if ("assassinWord" === checkWordAgainstLists(data)) {
-      // ends game
+      io.emit("flashImage", 410, 300, "red_team_wins", 12);
     }
-  }
+  } // --> blue team
 } //--> checkSubmission
 
 function checkWordAgainstLists(word) {
@@ -342,7 +373,7 @@ function checkWordAgainstLists(word) {
     return "blueTeamWord";
   } else if (wordBank.neutralWords.includes(word)) {
     return "neutralWord";
-  } else if (wordBank.assasinWord.includes(word)) {
+  } else if (wordBank.assassinWord.includes(word)) {
     return "assassinWord";
   }
 }
@@ -354,3 +385,8 @@ function sizeOfTeam(team) {
   });
   return size;
 }
+
+//light red
+// 0xff4343
+//light blue
+// 0x50b9ff
