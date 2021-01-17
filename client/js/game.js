@@ -444,8 +444,8 @@ function create() {
   this.socket.on("changeTeamTurn", function (team) {
     currentTeamTurn = team;
     createAndFlashImage(self, 410, 200, "switch_team_turns", 20);
-    playerConfirmButtonsVisible();
     spyMasterButtonsVisible();
+    playerConfirmButtonsVisible();
   });
 
   this.socket.on("flashImage", function (x, y, image, repeat) {
@@ -574,7 +574,6 @@ function update() {
       // wrap in try in case player tries to go off map
       if (
         current_tile.index == 2 &&
-        !current_tile.alreadySelected &&
         this.player.team === "red" &&
         !isSpyMaster &&
         isGameStarted
@@ -582,14 +581,13 @@ function update() {
         current_tile.tint = 0xff4343; //light red
       } else if (
         current_tile.index == 2 &&
-        !current_tile.alreadySelected &&
         this.player.team === "blue" &&
         !isSpyMaster &&
         isGameStarted //&&
       ) {
         current_tile.tint = 0x50b9ff; //light blue
       }
-      if (last_tile && last_tile != current_tile && !isSpyMaster && !current_tile.alreadySelected) {
+      if (last_tile && last_tile != current_tile && !isSpyMaster) {
         last_tile.tint = 0xffffff; //clears
       }
 

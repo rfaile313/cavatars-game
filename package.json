@@ -12,7 +12,9 @@
   "author": "Rudy Faile",
   "license": "not yet specified",
   "dependencies": {
+    "compression": "^1.7.4",
     "express": "^4.17.1",
+    "helmet": "^4.3.1",
     "phaser": "^3.24.1",
     "socket.io": "^2.3.0"
   },

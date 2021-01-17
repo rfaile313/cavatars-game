@@ -2,6 +2,8 @@
 const http = require("http");
 const express = require("express");
 const socketio = require("socket.io");
+const compression = require("compression");
+const helmet = require("helmet");
 // Local Files
 const WordBank = require("./wordbank");
 // Server Setup
@@ -14,6 +16,8 @@ const indexPath = `${__dirname}/../client`;
 console.log(`Serving static file from ${indexPath}`);
 app.use("/", express.static(indexPath));
 app.use("/settings", express.static(__dirname + "/../client/settings.html"));
+app.use(helmet());
+app.use(compression());
 // Create http server with express app
 const server = http.createServer(app);
 // socketio init
@@ -32,24 +36,33 @@ var players = {}; // player object list
 
 const wordBank = new WordBank();
 const wordList = Object.values(wordBank.wordList);
-
 const maxScore = 8;
 
-var currentTeamTurn = Math.floor(Math.random() * Math.floor(2))
+let currentTeamTurn;
+let redTeamScore;
+let blueTeamScore;
+let redTeamSubmissionCount;
+let blueTeamSubmissionCount;
+let redTeamRoundGuesses;
+let blueTeamRoundGuesses;
+let currentGuesses;
+let numOfSpymasters;
+
+function resetValues(){
+  currentTeamTurn = Math.floor(Math.random() * Math.floor(2))
   ? "red"
   : "blue";
+  redTeamScore = 0;
+  blueTeamScore = 0;
+  redTeamSubmissionCount = 0;
+  blueTeamSubmissionCount = 0;
+  redTeamRoundGuesses = 0;
+  blueTeamRoundGuesses = 0;
+  currentGuesses = 0;
+  numOfSpymasters = 0; 
+}
 
-let redTeamScore = 0;
-let blueTeamScore = 0;
-let redTeamSubmissionCount = 0;
-let blueTeamSubmissionCount = 0;
-
-var redTeamRoundGuesses = 0;
-var blueTeamRoundGuesses = 0;
-
-var currentGuesses = 0;
-
-let numOfSpymasters = 0;
+resetValues();
 
 // Socket Logic
 io.on("connection", onConnect);

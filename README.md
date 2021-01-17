@@ -4,7 +4,7 @@
 
 #### Codenames game of guessing which codenames (i.e. words) in a set are related to a hint-word given by another player. See: [Codenames](https://en.wikipedia.org/wiki/Codenames_(board_game))
 
-![gameplay](client/assets/gameplay.gif)
+[![Cavatars Gameplay Video](client/assets/cavatars.png)](https://youtu.be/jKvKLSwcUII)]
 
 #### Dev:
 
