@@ -14,5 +14,6 @@
 - refactor checkSubmission https://github.com/rfaile313/cavatars-game/issues/4
 
 #### Todo:
-- Game logic - spymaster sets amount of words, all players on team must lock in word, if they guess other teams word, neutral word, or assasin word - in progress 
+- Game logic - spymaster sets amount of words, all players on team must lock in word, if they guess other teams word, neutral word, or assasin word - in progress
+- finish win conditions
 - Players choose avatars
