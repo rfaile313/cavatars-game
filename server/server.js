@@ -281,6 +281,7 @@ function checkSubmission(data, team, x, y) {
       io.emit("tintTile", x, y, 0xff4343); //light red
       if (redTeamScore === maxScore) {
         // game over, red wins
+      	io.emit("flashImage", 410, 200, "red_team_wins", 36);
       }
       currentGuesses++;
       if (redTeamRoundGuesses - currentGuesses !== 0) {
@@ -319,7 +320,8 @@ function checkSubmission(data, team, x, y) {
       io.emit("changeTeamTurn", currentTeamTurn);
       // no score ends turn
     } else if ("assassinWord" === checkWordAgainstLists(data)) {
-      io.emit("flashImage", 410, 300, "blue_team_wins", 12);
+      io.emit("flashImage", 410, 200, "assassin_word", 20);
+      io.emit("flashImage", 410, 300, "blue_team_wins", 36);
       // ends game
     }
   } // ---> red team
@@ -346,7 +348,8 @@ function checkSubmission(data, team, x, y) {
       io.emit("tintTile", x, y, 0x50b9ff); // light blue
       if (blueTeamScore === maxScore) {
         // game over, blue wins
-      }
+		io.emit("flashImage", 410, 200, "blue_team_wins", 36);
+		}
       currentGuesses++;
       if (blueTeamRoundGuesses - currentGuesses !== 0) {
         io.emit(
@@ -374,7 +377,8 @@ function checkSubmission(data, team, x, y) {
       io.emit("changeTeamTurn", currentTeamTurn);
       // no score ends turn
     } else if ("assassinWord" === checkWordAgainstLists(data)) {
-      io.emit("flashImage", 410, 300, "red_team_wins", 12);
+      io.emit("flashImage", 410, 200, "assassin_word", 36);
+      io.emit("flashImage", 410, 300, "red_team_wins", 20);
     }
   } // --> blue team
 } //--> checkSubmission
