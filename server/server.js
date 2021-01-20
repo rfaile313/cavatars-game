@@ -9,7 +9,7 @@ const WordBank = require("./wordbank");
 // Server Setup
 const app = express();
 const PORT = 9999;
-const DEBUG = true;
+const DEBUG = false;
 
 // Only allow index.html on / or /settings
 const indexPath = `${__dirname}/../client`;
@@ -140,18 +140,9 @@ function onConnect(socket) {
     io.emit("updateTeams", players);
   });
   // server debug
-  socket.on("evalServer", function (data) {
-    //   if (!DEBUG){
-    //   try {
-    //     var res = eval(data);
-    //     socket.emit("evalAnswer", res);
-    //   } catch (e) {
-    //     socket.emit("evalAnswer", "Does not exist. Try something else.");
-    //   }
-    // }
-    // else{
+  socket.on("makePlayerSpymaster", function (data) {
+    // TODO: probably should refactor this too
     Object.keys(players).forEach(function (player) {
-      // TODO: Might need to make this specific to team 🤔
       if (players[player].name === data) {
         players[player].spymaster = "yes";
         numOfSpymasters++;
@@ -159,7 +150,6 @@ function onConnect(socket) {
         io.to(players[player].playerId).emit("showSpymasterBoard", wordBank);
       }
     });
-    // }
   });
   // Start new game
   socket.on("startNewGame", function () {
@@ -280,8 +270,10 @@ function checkSubmission(data, team, x, y) {
       io.emit("flashImage", 410, 300, "red_team_point", 6);
       io.emit("tintTile", x, y, 0xff4343); //light red
       if (redTeamScore === maxScore) {
-        // game over, red wins
-      	io.emit("flashImage", 410, 200, "red_team_wins", 36);
+        // game over, red team wins
+        io.emit("flashImage", 410, 200, "game_over", 12);
+        io.emit("flashImage", 410, 300, "red_team_wins", 24);
+        return;
       }
       currentGuesses++;
       if (redTeamRoundGuesses - currentGuesses !== 0) {
@@ -320,8 +312,8 @@ function checkSubmission(data, team, x, y) {
       io.emit("changeTeamTurn", currentTeamTurn);
       // no score ends turn
     } else if ("assassinWord" === checkWordAgainstLists(data)) {
-      io.emit("flashImage", 410, 200, "assassin_word", 20);
-      io.emit("flashImage", 410, 300, "blue_team_wins", 36);
+      io.emit("flashImage", 410, 500, "assassin_word", 12);
+      io.emit("flashImage", 410, 300, "blue_team_wins", 24);
       // ends game
     }
   } // ---> red team
@@ -348,8 +340,10 @@ function checkSubmission(data, team, x, y) {
       io.emit("tintTile", x, y, 0x50b9ff); // light blue
       if (blueTeamScore === maxScore) {
         // game over, blue wins
-		io.emit("flashImage", 410, 200, "blue_team_wins", 36);
-		}
+        io.emit("flashImage", 410, 300, "blue_team_wins", 24);
+        io.emit("flashImage", 410, 200, "game_over", 12);
+        return;
+      }
       currentGuesses++;
       if (blueTeamRoundGuesses - currentGuesses !== 0) {
         io.emit(
@@ -377,8 +371,8 @@ function checkSubmission(data, team, x, y) {
       io.emit("changeTeamTurn", currentTeamTurn);
       // no score ends turn
     } else if ("assassinWord" === checkWordAgainstLists(data)) {
-      io.emit("flashImage", 410, 200, "assassin_word", 36);
-      io.emit("flashImage", 410, 300, "red_team_wins", 20);
+      io.emit("flashImage", 410, 500, "assassin_word", 12);
+      io.emit("flashImage", 410, 300, "red_team_wins", 24);
     }
   } // --> blue team
 } //--> checkSubmission
@@ -403,7 +397,25 @@ function sizeOfTeam(team) {
   return size;
 }
 
+// Debugging
+
 //light red
 // 0xff4343
 //light blue
 // 0x50b9ff
+
+// Graveyard
+
+    // socket.on("evalServer", function (data) {
+    // 
+    //   if (!DEBUG){
+    //   try {
+    //     var res = eval(data);
+    //     socket.emit("evalAnswer", res);
+    //   } catch (e) {
+    //     socket.emit("evalAnswer", "Does not exist. Try something else.");
+    //   }
+    // }
+    // else{
+    //   }
+    // }

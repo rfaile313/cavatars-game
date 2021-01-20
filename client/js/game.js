@@ -2,7 +2,7 @@
 /*global Phaser, Phaser*/
 /*global io, io*/
 
-const DEBUG = true;
+const DEBUG = false;
 const GAME_WIDTH = 820;
 const GAME_HEIGHT = 820;
 
@@ -38,6 +38,7 @@ const game = new Phaser.Game(config);
 
 function preload() {
 
+  // Loading Screen / Bar
   var progressBar = this.add.graphics();
   var progressBox = this.add.graphics();
   progressBox.fillStyle(0x222222, 0.8);
@@ -97,8 +98,9 @@ function preload() {
       percentText.destroy();
       assetText.destroy();
   });
-  
+  // --> Loading Screen / Bar
 
+  // Load Assets
   this.load.image("tiles", "../assets/576x96-96x96.png");
   this.load.image("confirm", "../assets/button-confirm.png");
   this.load.image("new_game", "../assets/new_game.png");
@@ -367,7 +369,7 @@ function create() {
   const onChatSubmitted = (e) => {
     e.preventDefault();
     const input = document.querySelector("#chat");
-    if (DEBUG && input.value[0] === "/") {
+    if (input.value[0] === "/") {
       this.socket.emit("evalServer", input.value.slice(1));
     } else this.socket.emit("chatMessage", input.value);
     input.value = ""; // Clear text after send
