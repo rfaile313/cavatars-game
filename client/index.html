@@ -5,73 +5,73 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="styles/main.css" rel="stylesheet">
-    <title>Cavatars by Rudy</title>
+    <title>Cavatars</title>
 </head>
 
 <body>
-    <!-- Game Canvas & Chat -->
-    <div class="codenames-wrapper">
-        <!--  -->
+    <div class="main-content">
         <div id="game"></div>
-        <!--  -->
-        <div class="chat-wrapper">
 
-            <div class="name-input-wrapper">
+        <div class="sidebar">
+            <header>
+                <h1 class="game-title">CAVATARS</h1>
+                <p class="game-subtitle">Codenames with Avatars</p>
+            </header>
+
+            <div id="turnIndicator" class="turn-indicator"></div>
+
+            <section class="panel">
                 <form id="name-form">
-                    <h4>Choose name</h4>
-                    <input type="text" id="playerName" autocomplete="off" placeholder="Name" />
-                    <button id="nameSubmit">Submit</button>
+                    <h4 class="panel-title">Choose Name</h4>
+                    <input type="text" id="playerName" autocomplete="off" placeholder="Enter your name..." />
+                    <button id="nameSubmit" class="btn">Submit</button>
                 </form>
-            </div>
+            </section>
 
-            <div class="name-input-wrapper">
-                <div class="teamTables">
-                    <h4>Choose Team</h4>
-
+            <section class="panel">
+                <h4 class="panel-title">Choose Team</h4>
+                <div class="team-tables">
                     <table id="redTeamTable">
-                        <tr id="redTeamRow"> <th><button id="redTeamButton">Red Team</button></th> </tr>
+                        <tr id="redTeamRow">
+                            <th><button id="redTeamButton" class="btn btn-red">Red Team</button></th>
+                        </tr>
                     </table>
-                    <table id="blueTeamTable">      
-                        <tr id="blueTeamRow"><th><button id="blueTeamButton">Blue Team</button></th> </tr>
-                
+                    <table id="blueTeamTable">
+                        <tr id="blueTeamRow">
+                            <th><button id="blueTeamButton" class="btn btn-blue">Blue Team</button></th>
+                        </tr>
                     </table>
-
                 </div>
-            </div>
-            <br>
-            <br>
-            <br>
-            <br>
-            <br>
-            <br>
-            <h4 class="chatHeader">Chat / Game Log</h4>
-            <div class="event-container">
-                <ul id="events">
-                </ul>
-            </div>
-            <div class="chat-input-wrapper">
-                <form id="chat-form">
-                    <input id="chat" autocomplete="off">
-                    <button id="say">Say</button>
+                <button id="spymasterBtn" class="btn btn-spy-vol" style="display:none">Volunteer as Spymaster</button>
+            </section>
+
+            <section class="panel">
+                <h4 class="panel-title">Chat / Game Log</h4>
+                <div class="event-container">
+                    <ul id="events"></ul>
+                </div>
+                <form id="chat-form" class="chat-input-wrapper">
+                    <input id="chat" autocomplete="off" placeholder="Type a message...">
+                    <button id="say" class="btn">Say</button>
                 </form>
-            </div>
-            <div id="spymaster-container">
-                <ul id="spymasters">
-               
-                </ul>
-            </div>
-            <h4>How to play:</h4>
-            <p>Cavatars (Codenames with Avatars!) is a game of guessing which codenames (i.e., words) in a set are
-                related to a hint-word given by another player.</p>
-            <p>Players split into two teams: red and blue. One player of each team is selected as the team's spymaster;
-                the others are field operatives.</p>
+            </section>
 
-            <button id="newGame"> Start New Game </button>
+            <section class="panel" id="spymaster-container">
+                <ul id="spymasters"></ul>
+            </section>
+
+            <section class="panel panel-info">
+                <h4 class="panel-title">How to Play</h4>
+                <p>Cavatars (Codenames with Avatars!) is a game of guessing which codenames (i.e., words) in a set are
+                    related to a hint-word given by another player.</p>
+                <p>Players split into two teams: red and blue. One player of each team is selected as the team's
+                    spymaster; the others are field operatives.</p>
+            </section>
+
+            <button id="newGame" class="btn btn-start">Start New Game</button>
         </div>
-
-
     </div>
-    <!-- Scripts Load here-->
+
     <script src="js/phaser.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/game.js"></script>

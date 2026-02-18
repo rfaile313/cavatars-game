@@ -32,34 +32,54 @@ server.listen(PORT, () => {
 });
 
 // Game Logic / server global variables
-var players = {}; // player object list
-
-const wordBank = new WordBank();
-const wordList = Object.values(wordBank.wordList);
+var players = {};
+let wordBank = new WordBank();
+let wordList = Object.values(wordBank.wordList);
 const maxScore = 8;
 
+let isGameInProgress = false;
 let currentTeamTurn;
 let redTeamScore;
 let blueTeamScore;
-let redTeamSubmissionCount;
-let blueTeamSubmissionCount;
 let redTeamRoundGuesses;
 let blueTeamRoundGuesses;
 let currentGuesses;
-let numOfSpymasters;
+let numOfSpymasters = 0;
 
-function resetValues(){
+function resetValues() {
   currentTeamTurn = Math.floor(Math.random() * Math.floor(2))
-  ? "red"
-  : "blue";
+    ? "red"
+    : "blue";
   redTeamScore = 0;
   blueTeamScore = 0;
-  redTeamSubmissionCount = 0;
-  blueTeamSubmissionCount = 0;
   redTeamRoundGuesses = 0;
   blueTeamRoundGuesses = 0;
   currentGuesses = 0;
-  numOfSpymasters = 0; 
+}
+
+function endGame(winningTeam, reason) {
+  isGameInProgress = false;
+  // Clear spymasters so players re-volunteer next game
+  Object.keys(players).forEach(function (id) {
+    players[id].spymaster = "no";
+  });
+  numOfSpymasters = 0;
+  io.emit("gameOver", winningTeam, reason);
+  io.emit("updateTeams", players);
+}
+
+function resetGame() {
+  currentTeamTurn = Math.floor(Math.random() * Math.floor(2))
+    ? "red"
+    : "blue";
+  redTeamScore = 0;
+  blueTeamScore = 0;
+  redTeamRoundGuesses = 0;
+  blueTeamRoundGuesses = 0;
+  currentGuesses = 0;
+  wordBank = new WordBank();
+  wordList = Object.values(wordBank.wordList);
+  isGameInProgress = false;
 }
 
 resetValues();
@@ -80,87 +100,98 @@ function onConnect(socket) {
     spymaster: "no",
   };
 
-  // send the players object to the new player
   socket.emit("currentPlayers", players);
-  // update all other players of the new player
   socket.broadcast.emit("newPlayer", players[socket.id]);
   io.emit(
     "eventMessage",
-    "Player Connected." + " Current Players: " + Object.size(players)
+    "Player Connected. Current Players: " + Object.keys(players).length
   );
   io.emit("updateTeams", players);
   io.emit("setScore");
-  // Send Vanilla Wordlist
   socket.emit("wordList", wordList);
 
-  // when a player disconnects, remove them from our players object
   socket.on("disconnect", function () {
     console.log("user disconnected");
-    // remove this player from our players object
-
-    // emit a message to all players to remove this player
+    if (players[socket.id] && players[socket.id].spymaster === "yes") {
+      numOfSpymasters--;
+    }
     io.emit("userQuit", socket.id);
     delete players[socket.id];
     io.emit(
       "eventMessage",
-      "Player Left." + " Current Players: " + Object.size(players)
+      "Player Left. Current Players: " + Object.keys(players).length
     );
     io.emit("updateTeams", players);
   });
 
-  // when a player moves, update the player data
   socket.on("playerMovement", function (movementData) {
     players[socket.id].x = movementData.x;
     players[socket.id].y = movementData.y;
     players[socket.id].rotation = movementData.rotation;
     players[socket.id].direction = movementData.direction;
-    // emit a message to all players about the player that moved
     socket.broadcast.emit("playerMoved", players[socket.id]);
   });
 
-  // player joins a team
   socket.on("joinTeam", function (data) {
-    players[socket.id].team = data;
+    if (isGameInProgress) return;
+    var player = players[socket.id];
+    // Clear spymaster if switching teams
+    if (player.spymaster === "yes") {
+      player.spymaster = "no";
+      numOfSpymasters--;
+    }
+    player.team = data;
     io.emit("updateTeams", players);
+    // Emit Phaser name color updates
+    socket.emit("updatePlayerName", player.name);
+    io.emit("otherPlayerNameChanged", players);
   });
 
-  // chat message
   socket.on("chatMessage", function (data) {
     io.emit("chatMessage", data, players[socket.id].name);
   });
-  // event message
+
   socket.on("eventMessage", function (data, color) {
     io.emit("eventMessage", data, color);
   });
-  // Set Player name
+
   socket.on("setPlayerName", function (data) {
     players[socket.id].name = data;
     socket.emit("updatePlayerName", players[socket.id].name);
     io.emit("otherPlayerNameChanged", players);
     io.emit("updateTeams", players);
   });
-  // server debug
-  socket.on("makePlayerSpymaster", function (data) {
-    // TODO: probably should refactor this too
-    Object.keys(players).forEach(function (player) {
-      if (players[player].name === data) {
-        players[player].spymaster = "yes";
-        numOfSpymasters++;
-        //console.log(players[player].name);
-        io.to(players[player].playerId).emit("showSpymasterBoard", wordBank);
-      }
-    });
+
+  socket.on("becomeSpymaster", function () {
+    if (isGameInProgress) return;
+    var player = players[socket.id];
+    if (player.team === "none") return;
+    var teamHasOne = Object.values(players).some(
+      (p) => p.team === player.team && p.spymaster === "yes"
+    );
+    if (teamHasOne) return;
+    player.spymaster = "yes";
+    numOfSpymasters++;
+    io.emit("updateTeams", players);
+    io.emit(
+      "eventMessage",
+      player.name +
+        " is now the " +
+        player.team +
+        " team Spymaster!"
+    );
   });
-  // Start new game
+
   socket.on("startNewGame", function () {
-    // assumes that all players that are going to play are assigned to teams
-    var currentPlayers = Object.size(players);
-    var blueTeamSpymaster;
+    var playersOnTeams = Object.values(players).filter(
+      (p) => p.team !== "none"
+    ).length;
     var redTeamSpymaster;
-    if (currentPlayers < 4 && DEBUG == false) {
+    var blueTeamSpymaster;
+    if (playersOnTeams < 4 && DEBUG == false) {
       io.emit(
         "eventMessage",
-        `Need at least four Players *on teams* to start a game. <br> Current players: ${currentPlayers}<br>`
+        `Need at least four Players on teams to start a game. Current players on teams: ${playersOnTeams}`
       );
     } else if (numOfSpymasters < 2 && DEBUG == false) {
       io.emit(
@@ -168,17 +199,27 @@ function onConnect(socket) {
         `Both teams need a Spymaster in order to start the game!`
       );
     } else {
+      // Find spymaster names before reset
+      Object.keys(players).forEach(function (id) {
+        if (players[id].spymaster === "yes") {
+          if (players[id].team === "red")
+            redTeamSpymaster = players[id].name;
+          else if (players[id].team === "blue")
+            blueTeamSpymaster = players[id].name;
+        }
+      });
+      resetGame();
+      isGameInProgress = true;
+      io.emit("wordList", wordList);
       io.emit(
         "eventMessage",
         `<br>${players[socket.id].name} is starting a new game!<br>`
       );
       io.emit("eventMessage", `<br>${currentTeamTurn} goes first!<br>`);
-      Object.keys(players).forEach(function (player) {
-        if (players[player].spymaster === "yes") {
-          if (players[player].team === "red")
-            redTeamSpymaster = players[player].name;
-          else if (players[player].team === "blue")
-            blueTeamSpymaster = players[player].name;
+      // Send spymaster board with new words
+      Object.keys(players).forEach(function (id) {
+        if (players[id].spymaster === "yes") {
+          io.to(players[id].playerId).emit("showSpymasterBoard", wordBank);
         }
       });
       io.emit(
@@ -190,9 +231,8 @@ function onConnect(socket) {
     }
   });
 
-  // Spymaster submits amount of words to team
   socket.on("SpymasterSubmitsNumber", function (data) {
-    // data is a string: 'wordX' where X is a number from 1-8
+    if (!isGameInProgress) return;
     var rawString = data.slice(4);
     var number = parseInt(rawString);
     if (players[socket.id].team == "red") {
@@ -208,174 +248,91 @@ function onConnect(socket) {
         players[socket.id].team
       } team to guess.`
     );
-    io.emit("showConfirmButton");
   });
 
-  // Team word submission
+  // Single-guesser: one click processes guess immediately
   socket.on("submitWord", function (data, team, tile_x, tile_y) {
-    // TODO: need to figure out something if all players don't pick the same word :/
-    //console.log(data, team);
-    if (team === "red") {
-      var currentSizeOfRedTeam = sizeOfTeam("red");
-      //console.log(currentSizeOfRedTeam);
-      redTeamSubmissionCount++;
-      if (redTeamSubmissionCount === currentSizeOfRedTeam - 1) {
-        // less 1 bc of the spymaster
-        console.log("All submissions for the red team are in.");
-        redTeamSubmissionCount = 0;
-        checkSubmission(data, "red", tile_x, tile_y);
-        io.emit("setScore", redTeamScore, blueTeamScore);
-        io.emit("resetConfirmButton");
-      } else {
-        // dont do shit - happens on client
-      }
-    } else {
-      var currentSizeOfBlueTeam = sizeOfTeam("blue");
-      //console.log(currentSizeOfBlueTeam);
-      blueTeamSubmissionCount++;
-      if (blueTeamSubmissionCount === currentSizeOfBlueTeam - 1) {
-        // less 1 bc of the spymaster
-        console.log("All submissions for the blue team are in.");
-        blueTeamSubmissionCount = 0;
-        checkSubmission(data, "blue", tile_x, tile_y);
-        io.emit("setScore", redTeamScore, blueTeamScore);
-        io.emit("resetConfirmButton");
-      } else {
-        // dont do shit - happens on client
-      }
-    }
-  }); // --> submitWord
+    if (!isGameInProgress) return;
+    if (players[socket.id].team !== team) return;
+    if (players[socket.id].spymaster === "yes") return;
+    if (team !== currentTeamTurn) return;
+    checkSubmission(data, team, tile_x, tile_y);
+    io.emit("setScore", redTeamScore, blueTeamScore);
+  });
 } // -----------------> onConnect
 
-/*eslint no-prototype-builtins: "off"*/
-// find the size of an object
-Object.size = function (obj) {
-  var size = 0,
-    key;
-  for (key in obj) {
-    if (obj.hasOwnProperty(key)) size++;
-  }
-  return size;
-};
-
 function checkSubmission(data, team, x, y) {
-  // TODO: Refactor this - this is terribad.
-  if (team === "red") {
-    if ("redTeamWord" === checkWordAgainstLists(data)) {
-      io.emit(
-        "eventMessage",
-        `${data} is indeed a Red team word! Red team gets a point!`
-      );
-      redTeamScore++;
-      io.emit("flashImage", 410, 300, "red_team_point", 6);
-      io.emit("tintTile", x, y, 0xff4343); //light red
-      if (redTeamScore === maxScore) {
-        // game over, red team wins
-        io.emit("flashImage", 410, 200, "game_over", 12);
-        io.emit("flashImage", 410, 300, "red_team_wins", 24);
-        return;
-      }
-      currentGuesses++;
-      if (redTeamRoundGuesses - currentGuesses !== 0) {
-        io.emit(
-          "eventMessage",
-          `Red team goes again! Words remaining this round: ${
-            redTeamRoundGuesses - currentGuesses
-          }`
-        );
-      } else {
-        io.emit(
-          "eventMessage",
-          `Red Team has guessed all of the words their Spymaster has assigned the team. Well done! It is now Blue Team's turn.`
-        );
-        currentGuesses = 0;
-        currentTeamTurn = "blue";
-        io.emit("changeTeamTurn", currentTeamTurn);
-      }
-    } else if ("blueTeamWord" === checkWordAgainstLists(data)) {
-      io.emit(
-        "eventMessage",
-        `${data} is NOT a Red team word.... and what's worse, it's a Blue Team word... so Blue team gets a point! <br> Also, Red Team's turn is over!`
-      );
-      blueTeamScore++;
-      io.emit("tintTile", x, y, 0x50b9ff); // light blue
-      // also end turn
-      currentGuesses = 0;
-      currentTeamTurn = "blue";
-      io.emit("changeTeamTurn", currentTeamTurn);
-    } else if ("neutralWord" === checkWordAgainstLists(data)) {
-      io.emit(
-        "eventMessage",
-        `Unfortunately ${data} was an innocent bystander. You don't lose any points, but your team's turn is over.`
-      );
-      currentTeamTurn = "blue";
-      io.emit("changeTeamTurn", currentTeamTurn);
-      // no score ends turn
-    } else if ("assassinWord" === checkWordAgainstLists(data)) {
-      io.emit("flashImage", 410, 500, "assassin_word", 12);
-      io.emit("flashImage", 410, 300, "blue_team_wins", 24);
-      // ends game
+  var otherTeam = team === "red" ? "blue" : "red";
+  var teamColor = team === "red" ? 0xff4343 : 0x50b9ff;
+  var otherTeamColor = team === "red" ? 0x50b9ff : 0xff4343;
+  var teamRoundGuesses = team === "red" ? redTeamRoundGuesses : blueTeamRoundGuesses;
+  var teamScoreVar = team === "red" ? "red" : "blue";
+
+  var result = checkWordAgainstLists(data);
+
+  if (result === teamScoreVar + "TeamWord") {
+    // Guessed own team's word
+    io.emit(
+      "eventMessage",
+      `${data} is indeed a ${team.charAt(0).toUpperCase() + team.slice(1)} team word! ${team.charAt(0).toUpperCase() + team.slice(1)} team gets a point!`
+    );
+    if (team === "red") redTeamScore++;
+    else blueTeamScore++;
+    io.emit("flashImage", 410, 300, team + "_team_point", 6);
+    io.emit("tintTile", x, y, teamColor);
+    var currentScore = team === "red" ? redTeamScore : blueTeamScore;
+    if (currentScore === maxScore) {
+      io.emit("flashImage", 410, 200, "game_over", 12);
+      io.emit("flashImage", 410, 300, team + "_team_wins", 24);
+      endGame(team, "maxScore");
+      return;
     }
-  } // ---> red team
-  else {
-    // blue team
-    if ("redTeamWord" === checkWordAgainstLists(data)) {
+    currentGuesses++;
+    if (teamRoundGuesses - currentGuesses !== 0) {
       io.emit(
         "eventMessage",
-        `${data} is NOT a blue team word.... and what's worse, it's a Red Team word... so Red team gets a point! <br> Also, Blue Team's turn is over!`
+        `${team.charAt(0).toUpperCase() + team.slice(1)} team goes again! Words remaining this round: ${
+          teamRoundGuesses - currentGuesses
+        }`
       );
-      io.emit("tintTile", x, y, 0xff4343); //light red
-      redTeamScore++;
-      //also ends turn
-      currentTeamTurn = "red";
-      io.emit("changeTeamTurn", currentTeamTurn);
+    } else {
+      io.emit(
+        "eventMessage",
+        `${team.charAt(0).toUpperCase() + team.slice(1)} Team has guessed all of the words their Spymaster has assigned the team. Well done! It is now ${otherTeam.charAt(0).toUpperCase() + otherTeam.slice(1)} Team's turn.`
+      );
       currentGuesses = 0;
-    } else if ("blueTeamWord" === checkWordAgainstLists(data)) {
-      io.emit(
-        "eventMessage",
-        `${data} is indeed a Blue team word! Blue team gets a point!`
-      );
-      blueTeamScore++;
-      io.emit("flashImage", 410, 300, "blue_team_point", 6);
-      io.emit("tintTile", x, y, 0x50b9ff); // light blue
-      if (blueTeamScore === maxScore) {
-        // game over, blue wins
-        io.emit("flashImage", 410, 300, "blue_team_wins", 24);
-        io.emit("flashImage", 410, 200, "game_over", 12);
-        return;
-      }
-      currentGuesses++;
-      if (blueTeamRoundGuesses - currentGuesses !== 0) {
-        io.emit(
-          "eventMessage",
-          `Blue team goes again! Words remaining this round: ${
-            blueTeamRoundGuesses - currentGuesses
-          }`
-        );
-      } else {
-        io.emit(
-          "eventMessage",
-          `Blue Team has guessed all of the words their Spymaster has assigned the team. Well done! It is now Red Team's turn.`
-        );
-        currentGuesses = 0;
-        currentTeamTurn = "red";
-        io.emit("changeTeamTurn", currentTeamTurn);
-      }
-    } else if ("neutralWord" === checkWordAgainstLists(data)) {
-      io.emit(
-        "eventMessage",
-        `Unfortunately ${data} was an innocent bystander. You don't lose any points, but your team's turn is over.`
-      );
-      currentTeamTurn = "red";
-      currentGuesses = 0;
+      currentTeamTurn = otherTeam;
       io.emit("changeTeamTurn", currentTeamTurn);
-      // no score ends turn
-    } else if ("assassinWord" === checkWordAgainstLists(data)) {
-      io.emit("flashImage", 410, 500, "assassin_word", 12);
-      io.emit("flashImage", 410, 300, "red_team_wins", 24);
     }
-  } // --> blue team
-} //--> checkSubmission
+  } else if (result === otherTeam + "TeamWord") {
+    // Guessed other team's word
+    io.emit(
+      "eventMessage",
+      `${data} is NOT a ${team.charAt(0).toUpperCase() + team.slice(1)} team word.... and what's worse, it's a ${otherTeam.charAt(0).toUpperCase() + otherTeam.slice(1)} Team word... so ${otherTeam.charAt(0).toUpperCase() + otherTeam.slice(1)} team gets a point! <br> Also, ${team.charAt(0).toUpperCase() + team.slice(1)} Team's turn is over!`
+    );
+    if (otherTeam === "red") redTeamScore++;
+    else blueTeamScore++;
+    io.emit("tintTile", x, y, otherTeamColor);
+    currentGuesses = 0;
+    currentTeamTurn = otherTeam;
+    io.emit("changeTeamTurn", currentTeamTurn);
+  } else if (result === "neutralWord") {
+    io.emit(
+      "eventMessage",
+      `Unfortunately ${data} was an innocent bystander. You don't lose any points, but your team's turn is over.`
+    );
+    io.emit("tintTile", x, y, 0xcccccc);
+    currentGuesses = 0;
+    currentTeamTurn = otherTeam;
+    io.emit("changeTeamTurn", currentTeamTurn);
+  } else if (result === "assassinWord") {
+    io.emit("flashImage", 410, 500, "assassin_word", 12);
+    io.emit("flashImage", 410, 300, otherTeam + "_team_wins", 24);
+    io.emit("tintTile", x, y, 0x333333);
+    endGame(otherTeam, "assassin");
+    return;
+  }
+}
 
 function checkWordAgainstLists(word) {
   if (wordBank.redTeamWords.includes(word)) {
@@ -390,32 +347,5 @@ function checkWordAgainstLists(word) {
 }
 
 function sizeOfTeam(team) {
-  var size = 0;
-  Object.keys(players).forEach(function (player) {
-    if (players[player].team === team) size++;
-  });
-  return size;
+  return Object.values(players).filter((p) => p.team === team).length;
 }
-
-// Debugging
-
-//light red
-// 0xff4343
-//light blue
-// 0x50b9ff
-
-// Graveyard
-
-    // socket.on("evalServer", function (data) {
-    // 
-    //   if (!DEBUG){
-    //   try {
-    //     var res = eval(data);
-    //     socket.emit("evalAnswer", res);
-    //   } catch (e) {
-    //     socket.emit("evalAnswer", "Does not exist. Try something else.");
-    //   }
-    // }
-    // else{
-    //   }
-    // }

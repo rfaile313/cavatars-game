@@ -28,77 +28,81 @@ var config = {
 // global game variables here
 var last_tile;
 var confirm_button;
-var unique_tile_id_counter = 0; // labeled tile array
-var wordList = []; // holds vanilla wordList on client side
+var unique_tile_id_counter = 0;
+var wordList = [];
 var isSpyMaster = false;
 var isGameStarted = false;
 var currentTeamTurn;
 
 const game = new Phaser.Game(config);
 
-function preload() {
+function getTeamColor(team) {
+  if (team === "red") return "#ff4343";
+  if (team === "blue") return "#50b9ff";
+  return "#ffffff";
+}
 
+function preload() {
   // Loading Screen / Bar
   var progressBar = this.add.graphics();
   var progressBox = this.add.graphics();
   progressBox.fillStyle(0x222222, 0.8);
   progressBox.fillRect(240, 270, 320, 50);
-  
+
   var width = this.cameras.main.width;
   var height = this.cameras.main.height;
   var loadingText = this.make.text({
-      x: width / 2,
-      y: height / 2 - 50,
-      text: 'Loading...',
-      style: {
-          font: '20px monospace',
-          fill: '#ffffff'
-      }
+    x: width / 2,
+    y: height / 2 - 50,
+    text: "Loading...",
+    style: {
+      font: "20px monospace",
+      fill: "#ffffff",
+    },
   });
   loadingText.setOrigin(0.5, 0.5);
-  
+
   var percentText = this.make.text({
-      x: width / 2,
-      y: height / 2 - 5,
-      text: '0%',
-      style: {
-          font: '18px monospace',
-          fill: '#ffffff'
-      }
+    x: width / 2,
+    y: height / 2 - 5,
+    text: "0%",
+    style: {
+      font: "18px monospace",
+      fill: "#ffffff",
+    },
   });
   percentText.setOrigin(0.5, 0.5);
-  
+
   var assetText = this.make.text({
-      x: width / 2,
-      y: height / 2 + 50,
-      text: '',
-      style: {
-          font: '18px monospace',
-          fill: '#ffffff'
-      }
+    x: width / 2,
+    y: height / 2 + 50,
+    text: "",
+    style: {
+      font: "18px monospace",
+      fill: "#ffffff",
+    },
   });
 
   assetText.setOrigin(0.5, 0.5);
-  
-  this.load.on('progress', function (value) {
-      percentText.setText(parseInt(value * 100) + '%');
-      progressBar.clear();
-      progressBar.fillStyle(0xffffff, 1);
-      progressBar.fillRect(250, 280, 300 * value, 30);
-  });
-  
-  this.load.on('fileprogress', function (file) {
-      assetText.setText('Loading asset: ' + file.key);
+
+  this.load.on("progress", function (value) {
+    percentText.setText(parseInt(value * 100) + "%");
+    progressBar.clear();
+    progressBar.fillStyle(0xffffff, 1);
+    progressBar.fillRect(250, 280, 300 * value, 30);
   });
 
-  this.load.on('complete', function () {
-      progressBar.destroy();
-      progressBox.destroy();
-      loadingText.destroy();
-      percentText.destroy();
-      assetText.destroy();
+  this.load.on("fileprogress", function (file) {
+    assetText.setText("Loading asset: " + file.key);
   });
-  // --> Loading Screen / Bar
+
+  this.load.on("complete", function () {
+    progressBar.destroy();
+    progressBox.destroy();
+    loadingText.destroy();
+    percentText.destroy();
+    assetText.destroy();
+  });
 
   // Load Assets
   this.load.image("tiles", "../assets/576x96-96x96.png");
@@ -119,16 +123,14 @@ function preload() {
 }
 
 function create() {
-  // socket & self setup
-  // need to assign scene object function this
-  // to self in order to use it in a nested function
   var self = this;
   this.socket = io();
   // Camera setup w/slight zoom
-  this.cameras.main.setViewport(0, 0, 820, 820).setZoom(1.2); //.setZoom(1.5)
+  this.cameras.main.setViewport(0, 0, 820, 820).setZoom(1.2);
+  this.cameras.main.setBackgroundColor("#1a1a2e");
 
   const level = [
-    [1, 1, 1, 1, 1, 1, 1, 1, 1], //top
+    [1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 0, 2, 2, 2, 2, 2, 0, 1],
     [1, 0, 2, 2, 2, 2, 2, 0, 1],
@@ -136,7 +138,7 @@ function create() {
     [1, 0, 2, 2, 2, 2, 2, 0, 1],
     [1, 0, 2, 2, 2, 2, 2, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1], // bottom
+    [1, 1, 1, 1, 1, 1, 1, 1, 1],
   ];
 
   const map = this.make.tilemap({
@@ -148,21 +150,25 @@ function create() {
   this.platforms = map.createDynamicLayer(0, tiles, 0, 0);
   this.platforms.labels = [];
 
-  // assign the tiles which will be labeled && assign unique id
+  // Store original tile positions for reset
+  this.platforms.tilePositions = [];
+
   for (var i = 0; i < this.platforms.layer.data.length; i++) {
     for (var j = 0; j < this.platforms.layer.data.length; j++) {
       if (this.platforms.layer.data[i][j].index == 2) {
         this.platforms.labels.push(this.platforms.layer.data[i][j]);
         this.platforms.layer.data[i][j].uniqueID = unique_tile_id_counter++;
+        this.platforms.tilePositions.push({
+          pixelX: this.platforms.layer.data[i][j].pixelX,
+          pixelY: this.platforms.layer.data[i][j].pixelY,
+        });
       }
     }
   }
 
-  // Add physics before we generate players
   this.otherPlayers = this.physics.add.group();
-  // Generate Player(s)
+
   this.socket.on("currentPlayers", function (players) {
-    //console.log(players);
     Object.keys(players).forEach(function (id) {
       if (players[id].playerId === self.socket.id) {
         addPlayer(self, players[id]);
@@ -175,19 +181,22 @@ function create() {
     addOtherPlayers(self, playerInfo);
   });
 
-  this.socket.on("setScore", function (redScore = 0, blueScore = 0) {
+  this.socket.on("setScore", function (redScore, blueScore) {
+    redScore = redScore || 0;
+    blueScore = blueScore || 0;
     if (self.player.score) self.player.score.destroy();
     self.player.score = self.add.text(
-      205,
+      GAME_WIDTH / 2,
       75,
-      `Red Team:${redScore}/8                    Score                    Blue Team:${blueScore}/8`,
+      `RED ${redScore}/8  \u00b7  BLUE ${blueScore}/8`,
       {
-        fontFamily: "Arial",
+        fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
         fontSize: "16px",
-        fontWeight: "bold",
-        fill: "white",
+        fontStyle: "bold",
+        fill: "#e0e0e0",
       }
     );
+    self.player.score.setOrigin(0.5, 0);
     self.player.score.setShadow(1, 1, "black");
     self.player.score.setScrollFactor(0);
   });
@@ -203,16 +212,17 @@ function create() {
 
   this.socket.on("otherPlayerNameChanged", function (players) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
+      if (!players[otherPlayer.playerId]) return;
       otherPlayer.overheadName.destroy();
-      var hexString = assignRandomPhaserColor();
+      var hexString = getTeamColor(players[otherPlayer.playerId].team);
       otherPlayer.overheadName = self.add.text(
         otherPlayer.x - 30,
         otherPlayer.y - 40,
         players[otherPlayer.playerId].name,
         {
-          fontFamily: "Arial",
+          fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
           fontSize: "16px",
-          fontWeight: "bold",
+          fontStyle: "bold",
           fill: hexString,
         }
       );
@@ -221,12 +231,12 @@ function create() {
   });
 
   this.socket.on("updatePlayerName", function (name) {
-    var hexString = assignRandomPhaserColor();
+    var hexString = getTeamColor(self.player.team);
     if (self.player.overheadName) self.player.overheadName.destroy();
     self.player.overheadName = self.add.text(390, 370, name, {
-      fontFamily: "Arial",
+      fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
       fontSize: "16px",
-      fontWeight: "bold",
+      fontStyle: "bold",
       fill: hexString,
     });
 
@@ -237,7 +247,6 @@ function create() {
   this.socket.on("playerMoved", function (playerInfo) {
     self.otherPlayers.getChildren().forEach(function (otherPlayer) {
       if (playerInfo.playerId === otherPlayer.playerId) {
-        //otherPlayer.setRotation(playerInfo.rotation);
         otherPlayer.setPosition(playerInfo.x, playerInfo.y);
 
         otherPlayer.overheadName.setPosition(
@@ -256,87 +265,98 @@ function create() {
         } else otherPlayer.anims.play("turn", true);
       }
     });
-  }); //playerMoved
+  });
 
   this.socket.on("showSpymasterBoard", function (wordBank) {
     isSpyMaster = true;
     const redTeamWords = Object.values(wordBank.redTeamWords);
     const blueTeamWords = Object.values(wordBank.blueTeamWords);
-    //const neutralWords = Object.values(wordBank.neutralWords);
     const assassinWord = Object.values(wordBank.assassinWord);
-    //console.log(assassinWord);
     var current_tile;
     for (var i = 0; i < self.platforms.labels.length; i++) {
-      // Tint Red Team Words
       if (redTeamWords.includes(self.platforms.labels[i].text)) {
         current_tile = self.platforms.getTileAtWorldXY(
           self.platforms.labels[i].x,
           self.platforms.labels[i].y,
           true
         );
-        current_tile.tint = 0xff4343; // light red
-      }
-      // Tint Blue Team Words
-      else if (blueTeamWords.includes(self.platforms.labels[i].text)) {
+        current_tile.tint = 0xff4343;
+      } else if (blueTeamWords.includes(self.platforms.labels[i].text)) {
         current_tile = self.platforms.getTileAtWorldXY(
           self.platforms.labels[i].x,
           self.platforms.labels[i].y,
           true
         );
-        current_tile.tint = 0x50b9ff; // light blue
-      }
-      // Tint Assassin Word
-      else if (assassinWord.includes(self.platforms.labels[i].text)) {
+        current_tile.tint = 0x50b9ff;
+      } else if (assassinWord.includes(self.platforms.labels[i].text)) {
         current_tile = self.platforms.getTileAtWorldXY(
           self.platforms.labels[i].x,
           self.platforms.labels[i].y,
           true
         );
-        current_tile.tint = 0x828282; // gray
-      } else {
-        // Do nothing, neutral tiles
+        current_tile.tint = 0x828282;
       }
     }
   });
 
-  // TODO: wrap this in a promise in case it takes
-  // longer than expected && Ensure it only happens
-  // before the client's player is rendered. OR
-  // make sure the player is always on top with layering?
-  // Get Word List from server
+  // Word List handler - resets board on new game
   this.socket.on("wordList", function (data) {
-    clone_array(data);
-    // text assignment has to go in the socket function
-    // so that it's ready at the same time. i think maybe
-    // only way to do it without a promise
-    // console.log("Generated tiles", data);
+    // Destroy old text label objects if they exist
     for (var i = 0; i < self.platforms.labels.length; i++) {
-      self.platforms.labels[i] = self.add.text(
-        self.platforms.labels[i].pixelX + 10,
-        self.platforms.labels[i].pixelY + 30,
+      if (self.platforms.labels[i] && self.platforms.labels[i].destroy) {
+        self.platforms.labels[i].destroy();
+      }
+    }
+    // Reset tile tints and alreadySelected for all index-2 tiles
+    for (var ti = 0; ti < self.platforms.layer.data.length; ti++) {
+      for (var tj = 0; tj < self.platforms.layer.data[ti].length; tj++) {
+        if (self.platforms.layer.data[ti][tj].index == 2) {
+          self.platforms.layer.data[ti][tj].tint = 0xffffff;
+          self.platforms.layer.data[ti][tj].alreadySelected = false;
+        }
+      }
+    }
 
-        wordList[i],
+    wordList = [...data];
+
+    // Re-collect labels with fresh uniqueIDs using stored positions
+    self.platforms.labels = [];
+    unique_tile_id_counter = 0;
+    for (var ri = 0; ri < self.platforms.layer.data.length; ri++) {
+      for (var rj = 0; rj < self.platforms.layer.data[ri].length; rj++) {
+        if (self.platforms.layer.data[ri][rj].index == 2) {
+          self.platforms.layer.data[ri][rj].uniqueID = unique_tile_id_counter++;
+        }
+      }
+    }
+
+    for (var li = 0; li < self.platforms.tilePositions.length; li++) {
+      var label = self.add.text(
+        self.platforms.tilePositions[li].pixelX + 48,
+        self.platforms.tilePositions[li].pixelY + 48,
+        wordList[li],
         {
-          fontFamily: "Verdana",
-          fontWeight: "bold",
-          fontSize: "14px",
-          fill: "#000",
+          fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
+          fontStyle: "bold",
+          fontSize: "13px",
+          fill: "#fff",
         }
       );
+      label.setOrigin(0.5, 0.5);
+      self.platforms.labels[li] = label;
     }
   });
 
   this.socket.on("tintTile", function (x, y, color) {
     if (!isSpyMaster) {
-      // dont need to do shit if player is spymaster
       var tile_to_tint = self.platforms.getTileAtWorldXY(x, y, true);
       tile_to_tint.tint = color;
+      tile_to_tint.alreadySelected = true;
     }
   });
 
   // Bind keys
   this.cursors = this.input.keyboard.createCursorKeys();
-  // turn off phaser input listener if chat is focused to enable spaces (props martins for the help)
   const chatBox = document.getElementById("chat");
   chatBox.addEventListener("focus", () => {
     this.input.keyboard.disableGlobalCapture();
@@ -352,27 +372,21 @@ function create() {
     el.innerHTML = name + ": " + text;
     parent.appendChild(el);
   };
-  const eventMessage = (text, color = "black") => {
+  const eventMessage = (text, color = "white") => {
     const parent = document.querySelector("#events");
     const el = document.createElement("li");
     if (color === "red") el.className = "event-message-red";
     else if (color === "blue") el.className = "event-message-blue";
-    else el.className = "event-message-black";
+    else el.className = "event-message";
     el.innerHTML = text;
     parent.appendChild(el);
-  };
-
-  const evalAnswer = (text) => {
-    console.log(text);
   };
 
   const onChatSubmitted = (e) => {
     e.preventDefault();
     const input = document.querySelector("#chat");
-    if (input.value[0] === "/") {
-      this.socket.emit("evalServer", input.value.slice(1));
-    } else this.socket.emit("chatMessage", input.value);
-    input.value = ""; // Clear text after send
+    this.socket.emit("chatMessage", input.value);
+    input.value = "";
   };
 
   const onNameSubmitted = (e) => {
@@ -380,39 +394,53 @@ function create() {
     const input = document.getElementById("playerName");
     const nameForm = document.getElementById("name-form");
     this.socket.emit("setPlayerName", input.value);
-    input.value = ""; // Clear text after send
+    input.value = "";
     nameForm.style = "display:none";
   };
 
   const updateTeams = (players) => {
     removePlayersFromTable();
 
-    Object.keys(players).forEach(function (id) {
-      let parent;
-      let td;
-      let tr;
-      if (players[id].team === "red") {
-        parent = document.querySelector("#redTeamTable");
-        tr = document.createElement("tr");
-        td = document.createElement("td");
-        td.innerHTML = players[id].name;
-      } else if (players[id].team === "blue") {
-        parent = document.querySelector("#blueTeamTable");
-        tr = document.createElement("tr");
-        td = document.createElement("td");
-        td.innerHTML = players[id].name;
-      }
+    // Sync local team from server data
+    if (players[self.socket.id]) {
+      self.player.team = players[self.socket.id].team;
+    }
 
-      if (players[id].team === "red") {
-        tr.className = "red-team-member";
-        tr.appendChild(td);
-        parent.appendChild(tr);
-      } else if (players[id].team === "blue") {
-        tr.className = "blue-team-member";
-        tr.appendChild(td);
-        parent.appendChild(tr);
+    var myTeam = self.player.team;
+    var myTeamHasSM = false;
+
+    Object.keys(players).forEach(function (id) {
+      if (!players[id]) return;
+      var team = players[id].team;
+      if (team !== "red" && team !== "blue") return;
+
+      var parent = document.querySelector(
+        team === "red" ? "#redTeamTable" : "#blueTeamTable"
+      );
+      var tr = document.createElement("tr");
+      var td = document.createElement("td");
+      var nameText = players[id].name;
+      if (players[id].spymaster === "yes") {
+        nameText += ' <span class="spymaster-badge">SM</span>';
+      }
+      td.innerHTML = nameText;
+      tr.className = team === "red" ? "red-team-member" : "blue-team-member";
+      tr.appendChild(td);
+      parent.appendChild(tr);
+
+      // Track if my team already has a spymaster
+      if (team === myTeam && players[id].spymaster === "yes") {
+        myTeamHasSM = true;
       }
     });
+
+    // Show/hide volunteer button
+    var spyBtn = document.getElementById("spymasterBtn");
+    if (myTeam && myTeam !== "none" && !myTeamHasSM && !isGameStarted) {
+      spyBtn.style.display = "block";
+    } else {
+      spyBtn.style.display = "none";
+    }
   };
 
   const joinRedTeam = () => {
@@ -445,9 +473,11 @@ function create() {
   };
 
   const createSpyMasterButtons = () => {
+    const parent = document.querySelector("#spymasters");
+    parent.innerHTML = "";
     for (var i = 1; i < 9; i++) {
-      const parent = document.querySelector("#spymasters");
       const el = document.createElement("button");
+      el.className = "btn btn-spymaster";
       if (i == 1) el.innerHTML = `Give team ${i} word`;
       else el.innerHTML = `Give team ${i} words`;
       el.id = `word${i}`;
@@ -460,7 +490,6 @@ function create() {
   };
 
   const spyMasterButtonsVisible = () => {
-    // spymaster buttons
     const buttons = document.getElementById("spymaster-container");
     if (currentTeamTurn === this.player.team && isSpyMaster)
       buttons.style = "visibility: visible;";
@@ -468,7 +497,6 @@ function create() {
   };
 
   const playerConfirmButtonsVisible = () => {
-    // only show buttons if its the current players's turn
     if (isSpyMaster) confirm_button.visible = false;
     else if (currentTeamTurn === this.player.team)
       confirm_button.visible = true;
@@ -482,21 +510,32 @@ function create() {
     buttons.style = "visibility: hidden;";
   };
 
+  const updateTurnIndicator = (team) => {
+    const indicator = document.getElementById("turnIndicator");
+    if (!team) {
+      indicator.innerHTML = "";
+      indicator.className = "turn-indicator";
+      return;
+    }
+    var teamName = team.charAt(0).toUpperCase() + team.slice(1);
+    indicator.innerHTML = teamName + " Team's Turn";
+    indicator.className = "turn-indicator turn-" + team;
+  };
+
   this.socket.on("gameStarted", function (turn, redSpy, blueSpy) {
     isGameStarted = true;
     currentTeamTurn = turn;
     const button = document.getElementById("newGame");
     button.style = "display:none";
+    document.getElementById("spymasterBtn").style.display = "none";
     createAndFlashImage(self, 410, 250, "new_game", 12);
-    // if this player is spymaster give them a set of buttons to use on their turn
     if (isSpyMaster) {
-      // check team, give buttons
       createSpyMasterButtons();
     } else {
-      // tell players who spymasters are
       showSpymastersToPlayers(redSpy, blueSpy);
     }
-    // no longer can change teams, new players cant join team of a game in progress
+    playerConfirmButtonsVisible();
+    updateTurnIndicator(currentTeamTurn);
     document
       .getElementById("redTeamButton")
       .removeEventListener("click", joinRedTeam);
@@ -510,10 +549,34 @@ function create() {
     createAndFlashImage(self, 410, 200, "switch_team_turns", 20);
     spyMasterButtonsVisible();
     playerConfirmButtonsVisible();
+    updateTurnIndicator(currentTeamTurn);
+  });
+
+  this.socket.on("gameOver", function (winningTeam, reason) {
+    isGameStarted = false;
+    isSpyMaster = false;
+    currentTeamTurn = null;
+    confirm_button.visible = false;
+    // Re-show Start New Game button
+    const button = document.getElementById("newGame");
+    button.style = "display:inline-block";
+    // Re-enable team join buttons
+    document
+      .getElementById("redTeamButton")
+      .addEventListener("click", joinRedTeam);
+    document
+      .getElementById("blueTeamButton")
+      .addEventListener("click", joinBlueTeam);
+    // Clear spymasters
+    document.querySelector("#spymasters").innerHTML = "";
+    // Hide spymaster container
+    document.getElementById("spymaster-container").style =
+      "visibility: hidden;";
+    // Clear turn indicator
+    updateTurnIndicator(null);
   });
 
   this.socket.on("flashImage", function (x, y, image, repeat) {
-    //createAndFlashImage(self, 410, 300, "red_team_wins", 12);
     createAndFlashImage(self, x, y, image, repeat);
   });
 
@@ -531,12 +594,12 @@ function create() {
     .getElementById("blueTeamButton")
     .addEventListener("click", joinBlueTeam);
   document.getElementById("newGame").addEventListener("click", startNewGame);
-
-  this.socket.on("showConfirmButton", playerConfirmButtonsVisible);
+  document.getElementById("spymasterBtn").addEventListener("click", function () {
+    self.socket.emit("becomeSpymaster");
+  });
 
   // socket.on dom events
   this.socket.on("chatMessage", chatMessage);
-  this.socket.on("evalAnswer", evalAnswer);
   this.socket.on("eventMessage", eventMessage);
   this.socket.on("updateTeams", updateTeams);
   // Button events
@@ -548,7 +611,6 @@ function create() {
       true
     );
     if (this_tile.index == 2 && !this_tile.alreadySelected) {
-      //needs to be a submittable tile
       self.socket.emit(
         "eventMessage",
         self.player.name +
@@ -568,12 +630,9 @@ function create() {
       this_tile.alreadySelected = true;
     }
   });
-  // Image testing -- needs to be even num so last flash is not visible
-  //createAndFlashImage(self, 410, 300, "red_team_wins", 12);
-} // --> create()
+}
 
 function update() {
-  // Player movement handlers
   if (this.player) {
     if (this.cursors.left.isDown) {
       this.player.setVelocityX(-100);
@@ -599,12 +658,10 @@ function update() {
 
     this.physics.world.wrap(this.player, 2);
 
-    // emit player movement
     var x = this.player.x;
     var y = this.player.y;
     var r = this.player.rotation;
     var d = this.player.direction;
-    // only if the values changed
     if (
       this.player.oldPosition &&
       (x !== this.player.oldPosition.x ||
@@ -620,7 +677,6 @@ function update() {
       });
     }
 
-    // save old position data
     this.player.oldPosition = {
       x: this.player.x,
       y: this.player.y,
@@ -635,48 +691,50 @@ function update() {
     );
 
     try {
-      // wrap in try in case player tries to go off map
       if (
         current_tile.index == 2 &&
+        !current_tile.alreadySelected &&
         this.player.team === "red" &&
         !isSpyMaster &&
         isGameStarted
       ) {
-        current_tile.tint = 0xff4343; //light red
+        current_tile.tint = 0xff4343;
       } else if (
         current_tile.index == 2 &&
+        !current_tile.alreadySelected &&
         this.player.team === "blue" &&
         !isSpyMaster &&
-        isGameStarted //&&
+        isGameStarted
       ) {
-        current_tile.tint = 0x50b9ff; //light blue
+        current_tile.tint = 0x50b9ff;
       }
-      if (last_tile && last_tile != current_tile && !isSpyMaster) {
-        last_tile.tint = 0xffffff; //clears
+      if (
+        last_tile &&
+        last_tile != current_tile &&
+        !isSpyMaster &&
+        !last_tile.alreadySelected
+      ) {
+        last_tile.tint = 0xffffff;
       }
 
       last_tile = current_tile;
     } catch (e) {
       // Do nothing if no index and world wrap will catch
     }
-  } // --> player movement + tile + emit
-} // --> update()
+  }
+}
 
 function addPlayer(self, playerInfo) {
-  //console.log("adding player");
   self.player = self.physics.add.sprite(
     playerInfo.x,
     playerInfo.y,
     "char_sheet_1"
   );
   self.player.body.setSize(25, 33, true);
-  //self.player.body.offset.y = 38;
-  //self.player.setBounce(0.2);
   self.player.name = playerInfo.name;
   self.player.team = playerInfo.team;
   self.player.playerId = playerInfo.playerId;
 
-  // player animations
   self.anims.create({
     key: "left",
     frames: self.anims.generateFrameNumbers("char_sheet_1", {
@@ -716,16 +774,13 @@ function addPlayer(self, playerInfo) {
   self.anims.create({
     key: "turn",
     frames: [{ key: "char_sheet_1", frame: 1 }],
-    //frameRate: 20
   });
 
   self.physics.add.collider(self.player, self.platforms);
-  // camera follows player
   self.cameras.main.startFollow(self.player);
 }
 
 function addOtherPlayers(self, playerInfo) {
-  //console.log("adding another player");
   var otherPlayer = self.add
     .sprite(playerInfo.x, playerInfo.y, "char_sheet_1")
     .setSize(25, 33, true);
@@ -734,19 +789,17 @@ function addOtherPlayers(self, playerInfo) {
   otherPlayer.name = playerInfo.name;
   otherPlayer.team = playerInfo.team;
 
-  // Destroy if exists
   if (otherPlayer.overheadName) otherPlayer.overheadName.destroy();
-  // Give team color if exists else give random color
 
-  var hexString = assignRandomPhaserColor();
+  var hexString = getTeamColor(playerInfo.team);
   otherPlayer.overheadName = self.add.text(
     playerInfo.x - 30,
     playerInfo.y - 40,
     otherPlayer.name,
     {
-      fontFamily: "Arial",
+      fontFamily: "'Trebuchet MS', 'Lucida Sans', sans-serif",
       fontSize: "16px",
-      fontWeight: "bold",
+      fontStyle: "bold",
       fill: hexString,
     }
   );
@@ -771,63 +824,20 @@ function create_button(self, x, y, source) {
   return button;
 }
 
-function clone_array(source) {
-  for (var i = 0; i < source.length; i++) {
-    wordList[i] = source[i];
-  }
-  //console.log(wordList);
-}
-
-// Note(rudy): its ok to disable this because
-// object props are hardcoded... i think its ok anyway :)
-/*eslint no-prototype-builtins: "off"*/
-// find the size of an object
-Object.size = function (obj) {
-  var size = 0,
-    key;
-  for (key in obj) {
-    if (obj.hasOwnProperty(key)) size++;
-  }
-  return size;
-};
-
-function assignRandomPhaserColor() {
-  var newColor = new Phaser.Display.Color();
-  newColor.random(0, 255);
-  var convertColor = Phaser.Display.Color.RGBToString(
-    newColor.r,
-    newColor.g,
-    newColor.b,
-    newColor.a
-  );
-  return convertColor;
-}
-
 function createAndFlashImage(self, x, y, image, repeat) {
-  // creates an image and flashes it 4 times
   var this_image = self.add.image(x, y, image);
   this_image.setScrollFactor(0);
+  var flashCount = 0;
   self.time.addEvent({
     delay: 300,
-    callback: flash,
+    callback: function () {
+      flashCount++;
+      this_image.visible = !this_image.visible;
+      if (flashCount >= repeat) {
+        this_image.destroy();
+      }
+    },
     callbackScope: this,
     repeat: repeat,
-  }); // repeat should be even to be not visible @ end
-  function flash() {
-    this_image.visible = !this_image.visible;
-  }
+  });
 }
-
-// Debugging
-
-// player object
-// game.scene.scenes[0].player
-// example:
-// game.scene.scenes[0].player.name
-
-// GRAVEYARD
-
-//light red
-// 0xff4343
-//light blue
-// 0x50b9ff
